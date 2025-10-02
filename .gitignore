@@ -1,53 +1,21 @@
-# ===================================================================
-# .gitignore Utama untuk Monorepo Portofolio (Backend Go + Frontend React)
-# ===================================================================
-
-# 1. Rahasia & File Lingkungan (Secrets & Environment Files)
-# Abaikan file .env yang berisi kunci API, password database, dll.
 .env
 *.env.local
 *.env.*.local
-
-# 2. Dependensi & Build Artifacts
-# -------------------------------------------------------------------
-
-# Frontend (Node.js / React / Vite)
 frontend-portofolio/node_modules/
 frontend-portofolio/dist/
 frontend-portofolio/build/
-
-# Backend (Go)
-# Abaikan binary hasil kompilasi.
 backend-portofolio/server
 backend-portofolio/*.exe
 backend-portofolio/*.out
-
-# Abaikan folder 'vendor' jika Anda menggunakan `go mod vendor`.
-# Biarkan `go.sum` di dalam repositori untuk build yang konsisten.
 backend-portofolio/vendor/
-
-# 3. Data Runtime & Unggahan Pengguna (Runtime Data & User Uploads)
-# -------------------------------------------------------------------
-
-# Abaikan data volume Docker dari database.
 db_data/
-
-# Abaikan SEMUA file di dalam folder 'uploads',
-# TAPI jangan abaikan file .gitkeep agar foldernya tetap ada.
-# Ini memastikan folder 'uploads' selalu dibuat saat clone.
 uploads/*
 !uploads/.gitkeep
-
-# 4. Log Files
-# -------------------------------------------------------------------
 logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
-
-# 5. File Spesifik IDE & Sistem Operasi (IDE & OS Specific)
-# -------------------------------------------------------------------
 .idea/
 .vscode/
 *.swp
