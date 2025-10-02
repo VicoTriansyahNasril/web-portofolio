@@ -1,0 +1,57 @@
+# /docker-compose.yml
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: portfolio_db
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME} -h 127.0.0.1" ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [ appnet ]
+
+  backend:
+    build: ./backend-portofolio
+    container_name: portfolio_backend
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      APP_PORT: ${APP_PORT}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      JWT_SECRET: ${JWT_SECRET}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+    volumes:
+      - ./uploads:/app/storage/uploads
+    ports:
+      - "8080:8080"
+    networks: [ appnet ]
+
+  adminer:
+    image: adminer:latest
+    container_name: portfolio_adminer
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    networks: [ appnet ]
+volumes:
+  db_data:
+
+
+networks:
+  appnet:
+    driver: bridge
