@@ -43,10 +43,6 @@ export default function ExperienceTimeline({ experiences = [] }) {
                             <Typography variant="body2" color="primary.main" fontWeight={600}>
                                 {formatDate(item.start_date)} - {item.end_date ? formatDate(item.end_date) : 'Sekarang'}
                             </Typography>
-
-                            {/* ================================================================= */}
-                            {/* PERUBAHAN UTAMA: Menampilkan Judul dengan Label Tipe            */}
-                            {/* ================================================================= */}
                             <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 0.5 }}>
                                 <Typography variant="h6" fontWeight={700}>{item.title}</Typography>
                                 {(item.type === 'Magang' || item.type === 'Pekerjaan Penuh Waktu') && (

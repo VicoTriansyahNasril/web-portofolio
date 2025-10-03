@@ -6,6 +6,7 @@ import (
 	"backend-portofolio/internal/models"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"time"
 )
 
 // PUBLIC
@@ -66,6 +67,41 @@ func DeleteAchievement() gin.HandlerFunc {
 		id := c.Param("id")
 		if err := db.Conn.Delete(&models.Achievement{}, id).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "delete error"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"ok": true})
+	}
+}
+
+type reorderAchievementItem struct {
+	ID        uint `json:"id"`
+	SortOrder int  `json:"sort_order"`
+}
+type reorderAchievementReq struct {
+	Orders []reorderAchievementItem `json:"orders"`
+}
+
+func ReorderAchievements() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var req reorderAchievementReq
+		if err := c.ShouldBindJSON(&req); err != nil || len(req.Orders) == 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid body"})
+			return
+		}
+
+		tx := db.Conn.Begin()
+		now := time.Now()
+		for _, o := range req.Orders {
+			if err := tx.Model(&models.Achievement{}).
+				Where("id = ?", o.ID).
+				Updates(map[string]any{"sort_order": o.SortOrder, "updated_at": now}).Error; err != nil {
+				tx.Rollback()
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "update error"})
+				return
+			}
+		}
+		if err := tx.Commit().Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "commit error"})
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{"ok": true})

@@ -18,9 +18,6 @@ func CORSMiddleware(origins string) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
 		origin := c.GetHeader("Origin")
-
-		// Khusus untuk file statis di /uploads: izinkan semua (agar aman untuk canvas)
-		// dan jangan kirim Allow-Credentials (syaratnya canvas CORS friendly).
 		if strings.HasPrefix(c.Request.URL.Path, "/uploads/") {
 			c.Header("Access-Control-Allow-Origin", "*")
 			c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")

@@ -26,3 +26,8 @@ export const updateAdminAchievement = async (id, payload) => {
 export const deleteAdminAchievement = async (id) => {
     await api.delete(`/api/admin/achievements/${id}`)
 }
+
+export const reorderAdminAchievements = async (orders) => {
+    const { data } = await api.post('/api/admin/achievements/reorder', { orders })
+    return data
+}

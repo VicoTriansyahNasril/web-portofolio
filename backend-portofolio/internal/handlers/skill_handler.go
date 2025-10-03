@@ -3,7 +3,7 @@ package handlers
 
 import (
 	"net/http"
-	"time" // Pastikan 'time' diimpor
+	"time"
 
 	"backend-portofolio/internal/db"
 	"backend-portofolio/internal/models"
@@ -42,7 +42,6 @@ type reorderSkillReq struct {
 	Orders []reorderSkillItem `json:"orders"`
 }
 
-// HANDLER BARU UNTUK REORDER
 func ReorderSkills() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req reorderSkillReq
@@ -69,7 +68,7 @@ func ReorderSkills() gin.HandlerFunc {
 	}
 }
 
-// Create, Update, Delete tetap sama
+// Create, Update, Delete
 func CreateSkill() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var s models.Skill

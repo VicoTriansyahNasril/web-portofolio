@@ -29,7 +29,6 @@ export async function deleteProject(id) {
     await api.delete(`/api/admin/projects/${id}`)
 }
 
-// tetap: kirim { orders: [{id, sort_order}] }, fallback per item
 export async function reorderProjects(orders) {
     try {
         const { data } = await api.put('/api/admin/projects/reorder', { orders })

@@ -1,4 +1,4 @@
-//internal/server/router.go
+// internal/server/router.go
 package server
 
 import (
@@ -62,6 +62,7 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 		admin.POST("/achievements", handlers.CreateAchievement())
 		admin.PUT("/achievements/:id", handlers.UpdateAchievement())
 		admin.DELETE("/achievements/:id", handlers.DeleteAchievement())
+		admin.POST("/achievements/reorder", handlers.ReorderAchievements())
 	}
 
 	return r

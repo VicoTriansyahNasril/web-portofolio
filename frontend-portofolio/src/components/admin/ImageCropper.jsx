@@ -26,13 +26,12 @@ export default function ImageCropper({ open, src, onClose, onCropped, initialAsp
     const [crop, setCrop] = useState()
     const [completedCrop, setCompletedCrop] = useState()
 
-    // Hitung crop center saat gambar load / saat preset aspect berubah
     const onImageLoad = useCallback((e) => {
         const img = e.currentTarget
         const { width, height } = img
         if (aspect) {
             const mc = makeAspectCrop(
-                { unit: '%', width: 90 }, // kasih lebar awal 90%
+                { unit: '%', width: 90 },
                 aspect,
                 width,
                 height
@@ -44,7 +43,6 @@ export default function ImageCropper({ open, src, onClose, onCropped, initialAsp
     }, [aspect])
 
     useEffect(() => {
-        // ketika user klik preset lain -> re-center crop instan
         if (!imgRef.current) return
         const img = imgRef.current
         const { width, height } = img
@@ -60,7 +58,6 @@ export default function ImageCropper({ open, src, onClose, onCropped, initialAsp
         if (!imgRef.current || !completedCrop) return
         const img = imgRef.current
 
-        // Hitung ukuran crop dalam pixel
         const scaleX = img.naturalWidth / img.width
         const scaleY = img.naturalHeight / img.height
 

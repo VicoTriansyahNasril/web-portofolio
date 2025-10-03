@@ -66,7 +66,7 @@ export default function AdminProjects() {
             }
             setEditing(false); setInitial({})
             alert({ title: 'Sukses', text: 'Proyek berhasil disimpan.' })
-            fetchProjects() // Muat ulang semua untuk data terbaru
+            fetchProjects()
         } catch (_err) {
             alert({ title: 'Error', text: 'Gagal menyimpan proyek.', icon: 'error' })
         }
@@ -94,7 +94,7 @@ export default function AdminProjects() {
             await reorderProjects(next.map((p, i) => ({ id: p.id, sort_order: i })))
         } catch {
             alert({ title: 'Error', text: 'Gagal menyimpan urutan baru.', icon: 'error' })
-            setItems(originalOrder) // Rollback UI
+            setItems(originalOrder)
         }
     }
     const onRowDragEnd = () => { setOverIdx(null); setDragIdx(null); dragIndexRef.current = null }
