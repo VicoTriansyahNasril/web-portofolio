@@ -27,11 +27,22 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 	)
 
 	r.GET("/api/projects", handlers.ListPublicProjects())
+	r.HEAD("/api/projects", handlers.ListPublicProjects())
+
 	r.GET("/api/projects/:slug", handlers.GetProjectBySlug())
+	r.HEAD("/api/projects/:slug", handlers.GetProjectBySlug())
+
 	r.GET("/api/profile", handlers.GetProfilePublic())
+	r.HEAD("/api/profile", handlers.GetProfilePublic())
+
 	r.GET("/api/skills", handlers.GetSkillsPublic())
+	r.HEAD("/api/skills", handlers.GetSkillsPublic())
+
 	r.GET("/api/experiences", handlers.ListPublicExperiences())
+	r.HEAD("/api/experiences", handlers.ListPublicExperiences())
+
 	r.GET("/api/achievements", handlers.ListPublicAchievements())
+	r.HEAD("/api/achievements", handlers.ListPublicAchievements())
 
 	r.POST("/api/auth/login",
 		handlers.LoginHandler(cfg.JWTSecret, cfg.AdminEmail, cfg.AdminPassword))
