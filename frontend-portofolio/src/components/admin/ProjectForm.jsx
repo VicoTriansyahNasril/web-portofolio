@@ -2,22 +2,22 @@
 import {
     Paper, Stack, TextField, MenuItem, Typography, Button, Divider,
     Box, Card, CardMedia, IconButton, Tooltip, FormControlLabel, Switch
-} from '@mui/material'
-import { useFormik } from 'formik'
-import * as Yup from 'yup'
-import { useMemo, useState, useEffect } from 'react'
-import Swal from 'sweetalert2'
-import withReactContent from 'sweetalert2-react-content'
-import DropzoneUpload from './DropzoneUpload'
-import ProjectPreview from './ProjectPreview'
-import GalleryManager from './GalleryManager'
-import ImageCropper from './ImageCropper'
-import { api } from '../../api/client'
-import CropIcon from '@mui/icons-material/Crop'
-import ClearIcon from '@mui/icons-material/Clear'
-import { fileUrl } from '../../utils/url'
+} from '@mui/material';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
+import { useMemo, useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
+import DropzoneUpload from './DropzoneUpload';
+import ProjectPreview from './ProjectPreview';
+import GalleryManager from './GalleryManager';
+import ImageCropper from './ImageCropper';
+import { api } from '../../api/client';
+import CropIcon from '@mui/icons-material/Crop';
+import ClearIcon from '@mui/icons-material/Clear';
+import { fileUrl } from '../../utils/url';
 
-const MySwal = withReactContent(Swal)
+const MySwal = withReactContent(Swal);
 
 const slugify = (s = '') =>
     s
@@ -28,7 +28,7 @@ const slugify = (s = '') =>
         .trim()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '')
-        .slice(0, 160)
+        .slice(0, 160);
 
 const schema = Yup.object({
     slug: Yup.string().required('Slug wajib diisi').matches(/^[a-z0-9-]+$/, 'Gunakan huruf kecil, angka, dan strip (-)'),
@@ -41,7 +41,7 @@ const schema = Yup.object({
     role: Yup.string().nullable(),
     status: Yup.string().required(),
     tech_stack: Yup.string().nullable(),
-})
+});
 
 export default function ProjectForm({ initial = {}, onSubmit, onCancel }) {
     const init = useMemo(() => ({
@@ -57,17 +57,22 @@ export default function ProjectForm({ initial = {}, onSubmit, onCancel }) {
         is_featured: initial.is_featured || false,
         gallery: Array.isArray(initial.gallery) ? initial.gallery : [],
         tech_stack: initial.tech_stack || '',
-    }), [initial])
+    }), [initial]);
 
-    const [previewOpen, setPreviewOpen] = useState(false)
-    const [gallery, setGallery] = useState(init.gallery)
-    const [cropOpen, setCropOpen] = useState(false)
-    const [coverSrc, setCoverSrc] = useState(init.cover_url || '')
+    const [previewOpen, setPreviewOpen] = useState(false);
+    const [gallery, setGallery] = useState(init.gallery);
+
+    const [cropState, setCropState] = useState({
+        open: false,
+        src: '',
+        aspect: 16 / 9,
+        target: null,
+        galleryIndex: -1,
+    });
 
     useEffect(() => {
-        setGallery(Array.isArray(initial.gallery) ? initial.gallery : [])
-        setCoverSrc(initial.cover_url || '')
-    }, [initial])
+        setGallery(Array.isArray(initial.gallery) ? initial.gallery : []);
+    }, [initial]);
 
     const formik = useFormik({
         initialValues: init,
@@ -80,36 +85,48 @@ export default function ProjectForm({ initial = {}, onSubmit, onCancel }) {
                 showCancelButton: true,
                 confirmButtonText: 'Ya',
                 cancelButtonText: 'Batal',
-            })
+            });
             if (res.isConfirmed) {
-                await onSubmit({ ...values, gallery })
+                await onSubmit({ ...values, gallery });
             }
         },
-    })
+    });
 
-    const { values, errors, touched, handleChange, handleSubmit, setFieldValue } = formik
+    const { values, errors, touched, handleChange, handleSubmit, setFieldValue } = formik;
 
     const uploadBlob = async (blob) => {
-        const fd = new FormData()
-        fd.append('file', blob, 'crop.jpg')
-        const { data } = await api.post('/api/admin/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
-        return data?.url
-    }
+        const fd = new FormData();
+        fd.append('file', blob, 'crop.jpg');
+        const { data } = await api.post('/api/admin/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+        return data?.url;
+    };
+
+    const handleCropped = async (blob) => {
+        const url = await uploadBlob(blob);
+        if (cropState.target === 'cover') {
+            setFieldValue('cover_url', url);
+        } else if (cropState.target === 'gallery' && cropState.galleryIndex > -1) {
+            const newGallery = [...gallery];
+            newGallery[cropState.galleryIndex] = url;
+            setGallery(newGallery);
+        }
+        setCropState({ open: false, src: '', aspect: 16 / 9, target: null, galleryIndex: -1 });
+    };
 
     const handleTitleChange = (e) => {
-        const v = e.target.value
-        handleChange(e)
+        const v = e.target.value;
+        handleChange(e);
         if (!initial.id) {
-            const currentSlug = formik.values.slug || ''
+            const currentSlug = formik.values.slug || '';
             if (!currentSlug || currentSlug === slugify(currentSlug)) {
-                setFieldValue('slug', slugify(v))
+                setFieldValue('slug', slugify(v));
             }
         }
-    }
+    };
 
     const handleSlugBlur = () => {
-        if (values.slug) setFieldValue('slug', slugify(values.slug))
-    }
+        if (values.slug) setFieldValue('slug', slugify(values.slug));
+    };
 
     return (
         <Paper sx={{ p: 3, mt: 4 }}>
@@ -124,14 +141,14 @@ export default function ProjectForm({ initial = {}, onSubmit, onCancel }) {
 
                     <TextField name="body" label="Deskripsi Lengkap (Markdown didukung)" value={values.body} onChange={handleChange} multiline rows={10} />
 
-                    <DropzoneUpload key={`dz-cover-${initial.id || 'new'}`} label="Sampul (thumbnail)" multiple={false} onUploaded={(url) => { setFieldValue('cover_url', url); setCoverSrc(url) }} />
-                    <TextField name="cover_url" label="Sampul (URL)" value={values.cover_url} onChange={(e) => { handleChange(e); setCoverSrc(e.target.value) }} />
+                    <DropzoneUpload key={`dz-cover-${initial.id || 'new'}`} label="Sampul (thumbnail)" multiple={false} onUploaded={(url) => setFieldValue('cover_url', url)} />
+                    <TextField name="cover_url" label="Sampul (URL)" value={values.cover_url} onChange={handleChange} />
 
                     {values.cover_url ? (
                         <Card sx={{ maxWidth: 360, position: 'relative', mt: 1 }}>
                             <CardMedia component="img" image={fileUrl(values.cover_url)} alt="Sampul" />
-                            <Tooltip title="Crop Sampul"><IconButton size="small" sx={{ position: 'absolute', top: 8, right: 44, bgcolor: 'rgba(0,0,0,.5)', color: 'white' }} onClick={() => setCropOpen(true)}><CropIcon fontSize="small" /></IconButton></Tooltip>
-                            <Tooltip title="Hapus Sampul"><IconButton size="small" sx={{ position: 'absolute', top: 8, right: 8, bgcolor: 'rgba(0,0,0,.5)', color: 'white' }} onClick={() => { setFieldValue('cover_url', ''); setCoverSrc('') }}><ClearIcon fontSize="small" /></IconButton></Tooltip>
+                            <Tooltip title="Crop Sampul"><IconButton size="small" sx={{ position: 'absolute', top: 8, right: 44, bgcolor: 'rgba(0,0,0,.5)', color: 'white' }} onClick={() => setCropState({ open: true, src: fileUrl(values.cover_url), aspect: 16 / 9, target: 'cover' })}><CropIcon fontSize="small" /></IconButton></Tooltip>
+                            <Tooltip title="Hapus Sampul"><IconButton size="small" sx={{ position: 'absolute', top: 8, right: 8, bgcolor: 'rgba(0,0,0,.5)', color: 'white' }} onClick={() => setFieldValue('cover_url', '')}><ClearIcon fontSize="small" /></IconButton></Tooltip>
                         </Card>
                     ) : null}
 
@@ -156,7 +173,14 @@ export default function ProjectForm({ initial = {}, onSubmit, onCancel }) {
                     <Divider sx={{ my: 1 }} />
                     <Typography variant="subtitle1">Galeri (opsional)</Typography>
                     <DropzoneUpload key={`dz-gallery-${initial.id || 'new'}`} label="Tambah Gambar Galeri" multiple onUploaded={(urls) => { const arr = Array.isArray(urls) ? urls : [urls]; setGallery((prev) => [...prev, ...arr]) }} />
-                    <Box sx={{ mt: 1 }}><GalleryManager key={`gm-${initial.id || 'new'}`} items={gallery} onChange={setGallery} /></Box>
+                    <Box sx={{ mt: 1 }}>
+                        <GalleryManager
+                            key={`gm-${initial.id || 'new'}`}
+                            items={gallery}
+                            onChange={setGallery}
+                            onCrop={(index) => setCropState({ open: true, src: fileUrl(gallery[index]), aspect: 0, target: 'gallery', galleryIndex: index })}
+                        />
+                    </Box>
 
                     <Stack direction="row" spacing={2} justifyContent="flex-end">
                         <Button variant="text" onClick={() => setPreviewOpen(true)}>Preview</Button>
@@ -167,7 +191,13 @@ export default function ProjectForm({ initial = {}, onSubmit, onCancel }) {
             </form>
 
             <ProjectPreview open={previewOpen} onClose={() => setPreviewOpen(false)} project={{ ...values, gallery }} />
-            <ImageCropper open={cropOpen} src={coverSrc} aspect={16 / 9} onClose={() => setCropOpen(false)} onCropped={async (blob) => { const url = await uploadBlob(blob); setFieldValue('cover_url', url); setCoverSrc(url); setCropOpen(false) }} />
+            <ImageCropper
+                open={cropState.open}
+                src={cropState.src}
+                initialAspect={cropState.aspect}
+                onClose={() => setCropState({ ...cropState, open: false })}
+                onCropped={handleCropped}
+            />
         </Paper>
-    )
+    );
 }

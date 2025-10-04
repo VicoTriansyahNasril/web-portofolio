@@ -1,11 +1,11 @@
 // src/components/admin/ImageCropper.jsx
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react';
 import {
     Dialog, DialogTitle, DialogContent, DialogActions,
     Button, Slider, Stack, ToggleButtonGroup, ToggleButton, Box
-} from '@mui/material'
-import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop'
-import 'react-image-crop/dist/ReactCrop.css'
+} from '@mui/material';
+import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop';
+import 'react-image-crop/dist/ReactCrop.css';
 
 const PRESETS = [
     { key: 'free', label: 'BEBAS', value: 0 },
@@ -13,93 +13,104 @@ const PRESETS = [
     { key: '4:3', label: '4:3', value: 4 / 3 },
     { key: '1:1', label: '1:1', value: 1 },
     { key: '9:16', label: '9:16 (STORY)', value: 9 / 16 },
-]
+];
 
 function toCanvasBlob(canvas, type = 'image/jpeg', quality = 0.92) {
-    return new Promise((resolve) => canvas.toBlob((b) => resolve(b), type, quality))
+    return new Promise((resolve) => canvas.toBlob((b) => resolve(b), type, quality));
 }
 
 export default function ImageCropper({ open, src, onClose, onCropped, initialAspect }) {
-    const imgRef = useRef(null)
-    const [zoom, setZoom] = useState(1)
-    const [aspect, setAspect] = useState(initialAspect || 0) // 0 = free
-    const [crop, setCrop] = useState()
-    const [completedCrop, setCompletedCrop] = useState()
-
-    const onImageLoad = useCallback((e) => {
-        const img = e.currentTarget
-        const { width, height } = img
-        if (aspect) {
-            const mc = makeAspectCrop(
-                { unit: '%', width: 90 },
-                aspect,
-                width,
-                height
-            )
-            setCrop(centerCrop(mc, width, height))
-        } else {
-            setCrop({ unit: '%', x: 5, y: 5, width: 90, height: 90 })
-        }
-    }, [aspect])
+    const imgRef = useRef(null);
+    const [zoom, setZoom] = useState(1);
+    const [aspect, setAspect] = useState(initialAspect === undefined ? 0 : initialAspect);
+    const [crop, setCrop] = useState();
+    const [completedCrop, setCompletedCrop] = useState();
 
     useEffect(() => {
-        if (!imgRef.current) return
-        const img = imgRef.current
-        const { width, height } = img
-        if (aspect) {
-            const mc = makeAspectCrop({ unit: '%', width: 90 }, aspect, width, height)
-            setCrop(centerCrop(mc, width, height))
-        } else {
-            setCrop({ unit: '%', x: 5, y: 5, width: 90, height: 90 })
+        if (open) {
+            setAspect(initialAspect === undefined ? 0 : initialAspect);
+            setZoom(1);
+            setCrop(undefined);
+            setCompletedCrop(undefined);
         }
-    }, [aspect])
+    }, [open, initialAspect]);
+
+    const onImageLoad = useCallback((e) => {
+        const img = e.currentTarget;
+        const { width, height } = img;
+        const initialWidth = 90;
+        let newCrop;
+
+        if (aspect) {
+            newCrop = makeAspectCrop({ unit: '%', width: initialWidth }, aspect, width, height);
+        } else {
+            const newHeight = (initialWidth / 100) * (height / width) * 100;
+            newCrop = { unit: '%', width: initialWidth, height: newHeight };
+        }
+        setCrop(centerCrop(newCrop, width, height));
+    }, [aspect]);
+
+    useEffect(() => {
+        if (!imgRef.current) return;
+        onImageLoad({ currentTarget: imgRef.current });
+    }, [aspect, onImageLoad]);
 
     const handleSave = async () => {
-        if (!imgRef.current || !completedCrop) return
-        const img = imgRef.current
+        const image = imgRef.current;
+        const cropData = completedCrop;
 
-        const scaleX = img.naturalWidth / img.width
-        const scaleY = img.naturalHeight / img.height
+        if (!image || !cropData || !cropData.width || !cropData.height) {
+            console.error("Invalid crop selection.");
+            return;
+        }
 
-        const pixelRatio = window.devicePixelRatio || 1
-        const canvas = document.createElement('canvas')
-        canvas.width = Math.floor(completedCrop.width * scaleX * pixelRatio)
-        canvas.height = Math.floor(completedCrop.height * scaleY * pixelRatio)
-        const ctx = canvas.getContext('2d')
+        const canvas = document.createElement('canvas');
+        const scaleX = image.naturalWidth / image.width;
+        const scaleY = image.naturalHeight / image.height;
 
-        ctx.imageSmoothingQuality = 'high'
-        ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0)
+        canvas.width = Math.floor(cropData.width * scaleX);
+        canvas.height = Math.floor(cropData.height * scaleY);
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
 
         ctx.drawImage(
-            img,
-            completedCrop.x * scaleX,
-            completedCrop.y * scaleY,
-            completedCrop.width * scaleX,
-            completedCrop.height * scaleY,
-            0, 0,
-            completedCrop.width * scaleX,
-            completedCrop.height * scaleY
-        )
+            image,
+            Math.floor(cropData.x * scaleX),
+            Math.floor(cropData.y * scaleY),
+            Math.floor(cropData.width * scaleX),
+            Math.floor(cropData.height * scaleY),
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
 
-        const blob = await toCanvasBlob(canvas, 'image/jpeg', 0.92)
-        onCropped && onCropped(blob)
-    }
+        const blob = await toCanvasBlob(canvas);
+        onCropped?.(blob);
+    };
 
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+        <Dialog open={open} onClose={onClose} maxWidth="lg" PaperProps={{ sx: { width: '90vw', maxWidth: '1200px' } }}>
             <DialogTitle>Crop Gambar</DialogTitle>
             <DialogContent>
-                <Box sx={{ position: 'relative', width: '100%', height: 460 }}>
+                <Box sx={{
+                    width: '100%',
+                    height: '65vh',
+                    position: 'relative',
+                    bgcolor: 'action.hover',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                }}>
                     {src && (
                         <ReactCrop
                             crop={crop}
-                            onChange={(_, percentCrop) => setCrop(percentCrop)}
-                            onComplete={(_, pc) => setCompletedCrop(pc)}
+                            onChange={(pixelCrop, percentCrop) => setCrop(percentCrop)}
+                            onComplete={(pixelCrop) => setCompletedCrop(pixelCrop)}
                             aspect={aspect || undefined}
                             keepSelection
-                            ruleOfThirds
                         >
-                            {/* zoom sederhana: pakai CSS scale pada img */}
                             <img
                                 ref={imgRef}
                                 src={src}
@@ -107,8 +118,9 @@ export default function ImageCropper({ open, src, onClose, onCropped, initialAsp
                                 onLoad={onImageLoad}
                                 style={{
                                     transform: `scale(${zoom})`,
-                                    transformOrigin: 'center center',
-                                    maxHeight: '100%',
+                                    maxHeight: '65vh',
+                                    maxWidth: '100%',
+                                    objectFit: 'contain',
                                 }}
                                 crossOrigin="anonymous"
                             />
@@ -138,5 +150,5 @@ export default function ImageCropper({ open, src, onClose, onCropped, initialAsp
                 <Button variant="contained" onClick={handleSave}>Simpan</Button>
             </DialogActions>
         </Dialog>
-    )
+    );
 }
