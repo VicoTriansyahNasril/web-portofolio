@@ -15,6 +15,7 @@ type Config struct {
 	AdminPassword string
 	CORSOrigins   string
 	UploadDir     string
+	CloudinaryURL string
 }
 
 func getenv(k, def string) string {
@@ -37,5 +38,6 @@ func Load() Config {
 		AdminPassword: getenv("ADMIN_PASSWORD", ""),
 		CORSOrigins:   getenv("CORS_ORIGINS", "http://localhost:5173"),
 		UploadDir:     getenv("UPLOAD_DIR", "/app/storage/uploads"),
+		CloudinaryURL: getenv("CLOUDINARY_URL", ""),
 	}
 }

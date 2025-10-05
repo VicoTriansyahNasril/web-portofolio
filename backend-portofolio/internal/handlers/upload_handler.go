@@ -1,40 +1,55 @@
-// internal/handlers/upload_handler.go
+//internal/handlers/upload_handler.go
 package handlers
 
 import (
-	"fmt"
+	"context"
 	"net/http"
-	"path/filepath"
 	"time"
 
+	"github.com/cloudinary/cloudinary-go/v2"
+	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
 	"github.com/gin-gonic/gin"
 )
 
-func UploadHandler(uploadDir string) gin.HandlerFunc {
+func UploadHandler(cloudinaryURL string) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if cloudinaryURL == "" {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Cloudinary URL is not configured"})
+			return
+		}
+
 		file, err := c.FormFile("file")
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "file not found"})
 			return
 		}
 
-		ext := filepath.Ext(file.Filename)
-		if ext == "" {
-			ext = ".jpg"
+		fileReader, err := file.Open()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "could not open file"})
+			return
 		}
-		name := fmt.Sprintf("%s.%d%s",
-			time.Now().Format("20060102_150405"),
-			time.Now().UnixNano()%1e9,
-			ext)
+		defer fileReader.Close()
 
-		dst := filepath.Join(uploadDir, name)
-		if err := c.SaveUploadedFile(file, dst); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "save error"})
+		cld, err := cloudinary.NewFromURL(cloudinaryURL)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to initialize Cloudinary"})
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		defer cancel()
+
+		uploadResult, err := cld.Upload.Upload(ctx, fileReader, uploader.UploadParams{
+			Folder: "portfolio",
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to upload to Cloudinary"})
 			return
 		}
 
 		c.JSON(http.StatusOK, gin.H{
-			"url": "/uploads/" + name,
+			"url": uploadResult.SecureURL,
 		})
 	}
 }

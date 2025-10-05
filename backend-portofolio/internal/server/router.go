@@ -1,4 +1,4 @@
-// internal/server/router.go
+//internal/server/router.go
 package server
 
 import (
@@ -45,7 +45,7 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 		admin.DELETE("/projects/:id", handlers.DeleteProject())
 		admin.POST("/projects/reorder", handlers.ReorderProjects())
 
-		admin.POST("/upload", handlers.UploadHandler(cfg.UploadDir))
+		admin.POST("/upload", handlers.UploadHandler(cfg.CloudinaryURL))
 		admin.PUT("/profile", handlers.UpsertProfile())
 
 		admin.GET("/skills", handlers.AdminListSkills())
