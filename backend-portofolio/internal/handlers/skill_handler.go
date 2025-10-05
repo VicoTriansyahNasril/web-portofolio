@@ -10,7 +10,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// PUBLIC
 func GetSkillsPublic() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var items []models.Skill
@@ -22,7 +21,6 @@ func GetSkillsPublic() gin.HandlerFunc {
 	}
 }
 
-// ADMIN
 func AdminListSkills() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var items []models.Skill
