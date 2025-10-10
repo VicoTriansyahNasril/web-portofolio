@@ -71,7 +71,12 @@ export default function ProjectDetail() {
                             height="350"
                             image={fileUrl(data.cover_url)}
                             alt={data.title}
-                            sx={{ objectFit: 'cover', borderRadius: 2, mb: 3 }}
+                            sx={{
+                                borderRadius: 2,
+                                mb: 3,
+                                objectFit: 'contain',
+                                bgcolor: 'rgba(0,0,0,0.2)'
+                            }}
                         />
                     )}
 
