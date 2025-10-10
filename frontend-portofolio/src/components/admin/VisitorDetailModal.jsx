@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Box, Typography, Modal, CircularProgress, List, ListItem, ListItemText, Divider } from '@mui/material';
 import { format } from 'date-fns';
+import { api } from '../../api/client';
 
 const style = {
     position: 'absolute',
@@ -44,7 +45,7 @@ function SimpleBarChart({ data }) {
     );
 }
 
-export default function VisitorDetailModal({ visitorHash, visitorNumber, open, onClose })  {
+export default function VisitorDetailModal({ visitorHash, visitorNumber, open, onClose }) {
     const [details, setDetails] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -54,8 +55,7 @@ export default function VisitorDetailModal({ visitorHash, visitorNumber, open, o
         const fetchDetails = async () => {
             setLoading(true);
             try {
-                const response = await fetch(`/api/analytics/visitors/${visitorHash}`);
-                const data = await response.json();
+                const { data } = await api.get(`/api/admin/analytics/visitors/${visitorHash}`);
                 setDetails(data);
             } catch (error) {
                 console.error("Failed to fetch visitor details:", error);

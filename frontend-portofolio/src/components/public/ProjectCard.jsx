@@ -42,11 +42,7 @@ export default function ProjectCard({ project }) {
                         component="img"
                         image={fileUrl(cover)}
                         alt={project.title}
-                        sx={{
-                            height: 180,
-                            objectFit: 'contain',
-                            bgcolor: 'rgba(0,0,0,0.2)'
-                        }}
+                        sx={{ height: 180, objectFit: 'cover' }}
                     />
                 )}
                 <CardContent sx={{ flexGrow: 1 }}>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Box, Typography, Paper, CircularProgress, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button } from '@mui/material';
 import VisitorDetailModal from '../../components/admin/VisitorDetailModal';
+import { api } from '../../api/client';
 import { format } from 'date-fns';
 
 export default function AdminAnalytics() {
@@ -12,8 +13,7 @@ export default function AdminAnalytics() {
     useEffect(() => {
         const fetchVisitors = async () => {
             try {
-                const response = await fetch('/api/analytics/visitors');
-                const data = await response.json();
+                const { data } = await api.get('/api/admin/analytics/visitors');
                 setVisitors(data);
             } catch (error) {
                 console.error("Failed to fetch visitor data:", error);
