@@ -1,12 +1,9 @@
-//internal/server/router.go
 package server
 
 import (
 	"backend-portofolio/internal/config"
-	"backend-portofolio/internal/db"
 	"backend-portofolio/internal/handlers"
 	"backend-portofolio/internal/middleware"
-	"backend-portofolio/internal/models"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,15 +14,7 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 
 	r.Static("/uploads", cfg.UploadDir)
 
-	_ = db.Conn.AutoMigrate(
-		&models.Profile{},
-		&models.SocialLink{},
-		&models.Skill{},
-		&models.Project{},
-		&models.Experience{},
-		&models.Achievement{},
-	)
-
+	// Rute Publik
 	r.GET("/api/projects", handlers.ListPublicProjects())
 	r.GET("/api/projects/:slug", handlers.GetProjectBySlug())
 	r.GET("/api/profile", handlers.GetProfilePublic())
@@ -33,10 +22,13 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 	r.GET("/api/skills", handlers.GetSkillsPublic())
 	r.GET("/api/experiences", handlers.ListPublicExperiences())
 	r.GET("/api/achievements", handlers.ListPublicAchievements())
+	r.POST("/api/track", handlers.TrackVisit())
 
+	// Rute Auth
 	r.POST("/api/auth/login",
 		handlers.LoginHandler(cfg.JWTSecret, cfg.AdminEmail, cfg.AdminPassword))
 
+	// Rute Admin
 	admin := r.Group("/api/admin", middleware.JWTAuth(cfg.JWTSecret))
 	{
 		admin.GET("/projects", handlers.AdminListProjects())
@@ -64,6 +56,8 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 		admin.PUT("/achievements/:id", handlers.UpdateAchievement())
 		admin.DELETE("/achievements/:id", handlers.DeleteAchievement())
 		admin.POST("/achievements/reorder", handlers.ReorderAchievements())
+		admin.GET("/analytics/visitors", handlers.GetVisitorsSummary())
+		admin.GET("/analytics/visitors/:visitorHash", handlers.GetVisitorDetail())
 	}
 
 	return r

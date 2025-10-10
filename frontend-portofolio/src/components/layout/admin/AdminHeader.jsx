@@ -11,6 +11,7 @@ const nav = [
     { to: '/admin/skills', label: 'Skills' },
     { to: '/admin/experiences', label: 'Experiences' },
     { to: '/admin/achievements', label: 'Achievements' },
+    { to: '/admin/analytics', label: 'Analytics'}
 ]
 
 export default function AdminHeader() {

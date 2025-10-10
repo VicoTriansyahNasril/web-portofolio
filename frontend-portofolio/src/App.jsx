@@ -1,4 +1,3 @@
-//src/App.jsx
 import { useEffect, useMemo, useState, Suspense } from 'react'
 import { Container, Box } from '@mui/material'
 import { Routes, Route, useLocation } from 'react-router-dom'
@@ -18,6 +17,7 @@ import AdminProfile from './pages/admin/AdminProfile'
 import AdminSkills from './pages/admin/AdminSkills'
 import AdminExperiences from './pages/admin/AdminExperiences'
 import AdminAchievements from './pages/admin/AdminAchievements'
+import AdminAnalytics from './pages/admin/AdminAnalytics';
 import PrivateRoute from './auth/PrivateRoute'
 import AdminHeader from './components/layout/admin/AdminHeader'
 import AnimatedBackground from './components/ui/AnimatedBackground'
@@ -93,6 +93,28 @@ export default function App() {
     document.body.setAttribute('data-color-mode', mode)
   }, [mode])
 
+  useEffect(() => {
+    if (location.pathname.startsWith('/admin')) {
+      return;
+    }
+
+    const trackPageView = async (path) => {
+      try {
+        await fetch('/api/track', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ path }),
+        });
+      } catch (error) {
+        console.error('Analytics tracking failed:', error);
+      }
+    };
+
+    trackPageView(location.pathname);
+  }, [location.pathname]);
+
   const toggleMode = () => setMode((prev) => (prev === 'light' ? 'dark' : 'light'))
 
   return (
@@ -119,6 +141,7 @@ export default function App() {
           <Route path="/admin/skills" element={<PrivateRoute><AdminLayout><AdminSkills /></AdminLayout></PrivateRoute>} />
           <Route path="/admin/experiences" element={<PrivateRoute><AdminLayout><AdminExperiences /></AdminLayout></PrivateRoute>} />
           <Route path="/admin/achievements" element={<PrivateRoute><AdminLayout><AdminAchievements /></AdminLayout></PrivateRoute>} />
+          <Route path="/admin/analytics" element={<PrivateRoute><AdminLayout><AdminAnalytics /></AdminLayout></PrivateRoute>} />
         </Routes>
       </AnimatePresence>
     </ThemeProvider>

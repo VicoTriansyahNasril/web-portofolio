@@ -1,4 +1,4 @@
-// internal/db/db.go
+//internal/db/db.go
 package db
 
 import (
@@ -30,6 +30,7 @@ func Init(cfg config.Config) {
 		&models.Skill{},
 		&models.Experience{},
 		&models.Achievement{},
+		&models.PageVisit{},
 	); err != nil {
 		log.Fatalf("DB migrate error: %v\n", err)
 	}
