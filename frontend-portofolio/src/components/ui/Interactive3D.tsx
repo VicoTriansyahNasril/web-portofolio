@@ -213,9 +213,9 @@ export default function Interactive3D() {
                 zIndex: 0,
                 cursor: 'grab',
                 '&:active': { cursor: 'grabbing' },
+                pointerEvents: 'auto',
             }}
         >
-
             {theme.palette.mode === 'light' && (
                 <Box sx={{ position: 'absolute', inset: 0, zIndex: 0 }}>
                     <LightParticlesCanvas />
@@ -226,7 +226,12 @@ export default function Interactive3D() {
                 camera={{ position: [0, 2, 30], fov: 45 }}
                 gl={{ antialias: true, powerPreference: 'high-performance' }}
                 dpr={[1, 2]}
-                style={{ position: 'absolute', inset: 0, zIndex: 1 }}
+                style={{
+                    position: 'absolute',
+                    inset: 0,
+                    zIndex: 1,
+                    pointerEvents: 'auto'
+                }}
             >
                 <Scene />
             </Canvas>

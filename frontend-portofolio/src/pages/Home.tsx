@@ -1,3 +1,4 @@
+// src/pages/Home.tsx - FIXED VERSION
 import { useEffect, useState, useMemo } from 'react';
 import { Box, Stack, Typography, Paper, Chip, IconButton, Button, CircularProgress, Container } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
@@ -70,40 +71,130 @@ export default function Home() {
                 flexDirection: 'column',
                 justifyContent: 'space-between',
                 py: 4,
-                pointerEvents: 'none',
+                // ✅ CRITICAL FIX: Tidak ada pointerEvents di sini
+                // Biarkan default agar container tidak menghalangi mouse events ke background 3D
             }}
         >
-            <motion.div variants={itemVariants} style={{ pointerEvents: 'auto' }}>
-                <Box sx={{ maxWidth: 500 }}>
-                    <Typography variant="h5" color="primary.main" fontWeight={600}>Hi, my name is</Typography>
-                    <Typography variant="h2" fontWeight={800} sx={{ my: 1 }}>{profile?.full_name}.</Typography>
-                    <Typography variant="h4" fontWeight={700} color="text.secondary">{profile?.headline}</Typography>
-                    <Typography color="text.secondary" sx={{ mt: 2, mb: 1 }}>Tentang saya:</Typography>
+            {/* Bagian Hero/Profile - HARUS pakai pointerEvents: 'none' agar tidak menghalangi 3D */}
+            <motion.div variants={itemVariants}>
+                <Box
+                    sx={{
+                        maxWidth: 500,
+                        // ✅ Container text tidak menghalangi drag 3D
+                        pointerEvents: 'none',
+                        // ✅ Tapi child elements yang interaktif bisa diklik
+                        '& > *': {
+                            pointerEvents: 'auto'
+                        }
+                    }}
+                >
+                    <Typography variant="h5" color="primary.main" fontWeight={600}>
+                        Hi, my name is
+                    </Typography>
+                    <Typography variant="h2" fontWeight={800} sx={{ my: 1 }}>
+                        {profile?.full_name}.
+                    </Typography>
+                    <Typography variant="h4" fontWeight={700} color="text.secondary">
+                        {profile?.headline}
+                    </Typography>
+                    <Typography color="text.secondary" sx={{ mt: 2, mb: 1 }}>
+                        Tentang saya:
+                    </Typography>
                     <Stack direction="row" spacing={1}>
-                        {socialLinks.github && <IconButton component="a" href={socialLinks.github.url} target="_blank"><GitHubIcon /></IconButton>}
-                        {socialLinks.linkedin && <IconButton component="a" href={socialLinks.linkedin.url} target="_blank"><LinkedInIcon /></IconButton>}
+                        {socialLinks.github && (
+                            <IconButton
+                                component="a"
+                                href={socialLinks.github.url}
+                                target="_blank"
+                                sx={{ pointerEvents: 'auto' }}
+                            >
+                                <GitHubIcon />
+                            </IconButton>
+                        )}
+                        {socialLinks.linkedin && (
+                            <IconButton
+                                component="a"
+                                href={socialLinks.linkedin.url}
+                                target="_blank"
+                                sx={{ pointerEvents: 'auto' }}
+                            >
+                                <LinkedInIcon />
+                            </IconButton>
+                        )}
                     </Stack>
                 </Box>
             </motion.div>
 
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', pointerEvents: 'auto' }}>
-                <Stack spacing={3} sx={{ alignItems: 'flex-end', maxWidth: 450, width: '100%' }}>
+            {/* Bagian Cards - HARUS pakai pointerEvents: 'none' agar tidak menghalangi 3D */}
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <Stack
+                    spacing={3}
+                    sx={{
+                        alignItems: 'flex-end',
+                        maxWidth: 450,
+                        width: '100%',
+                        // ✅ Stack tidak menghalangi drag 3D
+                        pointerEvents: 'none',
+                        // ✅ Tapi child elements (Paper) bisa diklik
+                        '& > *': {
+                            pointerEvents: 'auto'
+                        }
+                    }}
+                >
                     <motion.div variants={itemVariants} style={{ width: '100%' }}>
-                        <Paper sx={{ p: { xs: 2, md: 3 }, backdropFilter: 'blur(10px)', backgroundColor: 'rgba(17, 22, 42, 0.6)' }}>
-                            <Typography variant="h5" fontWeight={700} mb={2}>Teknologi & Keahlian</Typography>
+                        <Paper
+                            sx={{
+                                p: { xs: 2, md: 3 },
+                                backdropFilter: 'blur(10px)',
+                                backgroundColor: 'rgba(17, 22, 42, 0.6)',
+                                pointerEvents: 'auto' // ✅ Paper bisa diklik
+                            }}
+                        >
+                            <Typography variant="h5" fontWeight={700} mb={2}>
+                                Teknologi & Keahlian
+                            </Typography>
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                                {skills.slice(0, 8).map(skill => <Chip key={skill.id} label={skill.name} variant="outlined" />)}
+                                {skills.slice(0, 8).map(skill => (
+                                    <Chip
+                                        key={skill.id}
+                                        label={skill.name}
+                                        variant="outlined"
+                                    />
+                                ))}
                             </Box>
-                            <Button component={RouterLink} to="/about" endIcon={<ArrowForwardIcon />} sx={{ mt: 3, color: 'primary.light' }}>
+                            <Button
+                                component={RouterLink}
+                                to="/about"
+                                endIcon={<ArrowForwardIcon />}
+                                sx={{ mt: 3, color: 'primary.light' }}
+                            >
                                 Lihat Semua Keahlian
                             </Button>
                         </Paper>
                     </motion.div>
+
                     <motion.div variants={itemVariants} style={{ width: '100%' }}>
-                        <Paper sx={{ p: { xs: 2, md: 3 }, textAlign: 'center', backdropFilter: 'blur(10px)', backgroundColor: 'rgba(17, 22, 42, 0.6)' }}>
-                            <Typography variant="h5" fontWeight={700}>Lihat Semua Karya Saya</Typography>
-                            <Typography color="text.secondary" my={1}>Eksplorasi lebih dalam hasil kerja dan proyek pribadi saya.</Typography>
-                            <Button component={RouterLink} to="/projects" variant="contained" sx={{ mt: 2 }}>
+                        <Paper
+                            sx={{
+                                p: { xs: 2, md: 3 },
+                                textAlign: 'center',
+                                backdropFilter: 'blur(10px)',
+                                backgroundColor: 'rgba(17, 22, 42, 0.6)',
+                                pointerEvents: 'auto' // ✅ Paper bisa diklik
+                            }}
+                        >
+                            <Typography variant="h5" fontWeight={700}>
+                                Lihat Semua Karya Saya
+                            </Typography>
+                            <Typography color="text.secondary" my={1}>
+                                Eksplorasi lebih dalam hasil kerja dan proyek pribadi saya.
+                            </Typography>
+                            <Button
+                                component={RouterLink}
+                                to="/projects"
+                                variant="contained"
+                                sx={{ mt: 2 }}
+                            >
                                 Semua Proyek
                             </Button>
                         </Paper>

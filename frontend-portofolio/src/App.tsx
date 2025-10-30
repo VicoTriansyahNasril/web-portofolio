@@ -35,24 +35,45 @@ const pageTransition: Transition = {
   duration: 0.5,
 };
 
-function PageWrapper({ children }: { children: ReactNode }) {
+function PageLayout({ children }: { children: ReactNode }) {
   return (
     <Motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
-      <Container sx={{ py: 4 }}>
-        {children}
-      </Container>
+      {children}
     </Motion.div>
+  );
+}
+
+function PublicLayout({ children, mode, toggleMode }: { 
+  children: ReactNode; 
+  mode: 'light' | 'dark'; 
+  toggleMode: () => void 
+}) {
+  const location = useLocation();
+  const isHomePage = location.pathname === '/';
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <Header mode={mode} toggleMode={toggleMode} />
+      {isHomePage ? (
+        children
+      ) : (
+        <>
+          <Container component="main" sx={{ flex: 1, position: 'relative', zIndex: 1, py: 4 }}>
+            <PageLayout>{children}</PageLayout>
+          </Container>
+          <Footer />
+        </>
+      )}
+    </Box>
   );
 }
 
 function AdminLayout({ children }: { children: ReactNode }) {
   return (
-    <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ minHeight: '100vh', position: 'relative', display: 'flex', flexDirection: 'column' }}>
       <AdminHeader />
-      <Container component="main" sx={{ py: 4, flex: 1 }}>
-        <Motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          {children}
-        </Motion.div>
+      <Container component="main" sx={{ py: 4, position: 'relative', zIndex: 1, flex: 1 }}>
+        <PageLayout>{children}</PageLayout>
       </Container>
       <Footer />
     </Box>
@@ -76,44 +97,57 @@ export default function App() {
     document.body.setAttribute('data-color-mode', mode);
   }, [mode]);
 
+  useEffect(() => {
+    if (location.pathname.startsWith('/admin')) {
+      return;
+    }
+
+    const trackPageView = async (path: string) => {
+      try {
+        await fetch('/api/track', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ path }),
+        });
+      } catch (error) {
+        console.error('Analytics tracking failed:', error);
+      }
+    };
+
+    trackPageView(location.pathname);
+  }, [location.pathname]);
+
   const toggleMode = () => setMode((prev) => (prev === 'light' ? 'dark' : 'light'));
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box sx={{ position: 'relative', minHeight: '100vh' }}>
-        <Box sx={{ position: 'absolute', inset: 0, zIndex: 0 }}>
-          {isHomePage ? (
-            <Suspense fallback={null}><Interactive3D /></Suspense>
-          ) : (
-            <AnimatedBackground />
-          )}
-        </Box>
 
-        <Box sx={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-          <Header mode={mode} toggleMode={toggleMode} />
-          <Box component="main" sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-            <AnimatePresence mode="wait">
-              <Routes location={location} key={location.pathname}>
-                <Route path="/" element={<Home />} />
-                <Route path="/projects" element={<PageWrapper><Projects /></PageWrapper>} />
-                <Route path="/projects/:slug" element={<PageWrapper><ProjectDetail /></PageWrapper>} />
-                <Route path="/about" element={<PageWrapper><About /></PageWrapper>} />
+      {isHomePage ? (
+        <Suspense fallback={null}><Interactive3D /></Suspense>
+      ) : (
+        <AnimatedBackground />
+      )}
 
-                <Route path="/admin/login" element={<Login />} />
-                <Route path="/admin" element={<PrivateRoute><AdminLayout><Dashboard /></AdminLayout></PrivateRoute>} />
-                <Route path="/admin/projects" element={<PrivateRoute><AdminLayout><AdminProjects /></AdminLayout></PrivateRoute>} />
-                <Route path="/admin/profile" element={<PrivateRoute><AdminLayout><AdminProfile /></AdminLayout></PrivateRoute>} />
-                <Route path="/admin/skills" element={<PrivateRoute><AdminLayout><AdminSkills /></AdminLayout></PrivateRoute>} />
-                <Route path="/admin/experiences" element={<PrivateRoute><AdminLayout><AdminExperiences /></AdminLayout></PrivateRoute>} />
-                <Route path="/admin/achievements" element={<PrivateRoute><AdminLayout><AdminAchievements /></AdminLayout></PrivateRoute>} />
-                <Route path="/admin/analytics" element={<PrivateRoute><AdminLayout><AdminAnalytics /></AdminLayout></PrivateRoute>} />
-              </Routes>
-            </AnimatePresence>
-          </Box>
-          <Footer />
-        </Box>
-      </Box>
+      <AnimatePresence mode="wait">
+        <Routes location={location} key={location.pathname}>
+          <Route path="/" element={<PublicLayout mode={mode} toggleMode={toggleMode}><Home /></PublicLayout>} />
+          <Route path="/projects" element={<PublicLayout mode={mode} toggleMode={toggleMode}><Projects /></PublicLayout>} />
+          <Route path="/projects/:slug" element={<PublicLayout mode={mode} toggleMode={toggleMode}><ProjectDetail /></PublicLayout>} />
+          <Route path="/about" element={<PublicLayout mode={mode} toggleMode={toggleMode}><About /></PublicLayout>} />
+
+          <Route path="/admin/login" element={<Login />} />
+          <Route path="/admin" element={<PrivateRoute><AdminLayout><Dashboard /></AdminLayout></PrivateRoute>} />
+          <Route path="/admin/projects" element={<PrivateRoute><AdminLayout><AdminProjects /></AdminLayout></PrivateRoute>} />
+          <Route path="/admin/profile" element={<PrivateRoute><AdminLayout><AdminProfile /></AdminLayout></PrivateRoute>} />
+          <Route path="/admin/skills" element={<PrivateRoute><AdminLayout><AdminSkills /></AdminLayout></PrivateRoute>} />
+          <Route path="/admin/experiences" element={<PrivateRoute><AdminLayout><AdminExperiences /></AdminLayout></PrivateRoute>} />
+          <Route path="/admin/achievements" element={<PrivateRoute><AdminLayout><AdminAchievements /></AdminLayout></PrivateRoute>} />
+          <Route path="/admin/analytics" element={<PrivateRoute><AdminLayout><AdminAnalytics /></AdminLayout></PrivateRoute>} />
+        </Routes>
+      </AnimatePresence>
     </ThemeProvider>
   );
 }
