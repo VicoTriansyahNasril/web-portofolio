@@ -2,6 +2,17 @@ import axios, { AxiosResponse } from 'axios';
 
 const instance = axios.create({});
 
+const VISITOR_ID_KEY = 'portfolio_visitor_id';
+
+function getVisitorId(): string {
+    let visitorId = localStorage.getItem(VISITOR_ID_KEY);
+    if (!visitorId) {
+        visitorId = crypto.randomUUID();
+        localStorage.setItem(VISITOR_ID_KEY, visitorId);
+    }
+    return visitorId;
+}
+
 instance.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('admin-token');
@@ -39,7 +50,8 @@ export const api = {
 
 export const trackPageVisit = async (path: string): Promise<void> => {
     try {
-        await api.post('/api/track', { path });
+        const visitorId = getVisitorId();
+        await api.post('/api/track', { path, visitorId });
     } catch (error) {
         console.error('Failed to track page visit:', error);
     }

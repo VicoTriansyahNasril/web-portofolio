@@ -1,88 +1,145 @@
-import { useState, useEffect } from 'react';
-import { Box, Typography, Paper, CircularProgress, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button } from '@mui/material';
-import VisitorDetailModal from '../../components/admin/VisitorDetailModal';
-import { api } from '../../api/client';
-import { format } from 'date-fns';
-import { VisitorSummary, VisitorDetail } from '../../types';
+import { useEffect, useState } from 'react';
+import { Box, Button, Paper, Typography, CircularProgress, Alert } from '@mui/material';
+import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
+import { api } from '@/api/client';
+import VisitorDetailModal from '@/components/admin/VisitorDetailModal';
+import { format, isValid, parseISO } from 'date-fns';
+import type { VisitorDetail, VisitorSummary } from '@/types';
+
+const formatDate = (dateString: string): string => {
+    try {
+        const date = parseISO(dateString);
+        if (!isValid(date)) return 'Invalid date';
+        return format(date, 'dd MMM yyyy, HH:mm');
+    } catch {
+        return 'Invalid date';
+    }
+};
 
 export default function AdminAnalytics() {
     const [visitors, setVisitors] = useState<VisitorSummary[]>([]);
     const [loading, setLoading] = useState(true);
-    const [selectedVisitorDetail, setSelectedVisitorDetail] = useState<VisitorDetail | null>(null);
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [error, setError] = useState('');
+    const [selectedDetail, setSelectedDetail] = useState<VisitorDetail | null>(null);
+    const [modalOpen, setModalOpen] = useState(false);
 
     useEffect(() => {
-        const fetchVisitors = async () => {
-            try {
-                const { data } = await api.get<VisitorSummary[]>('/api/admin/analytics/visitors');
-                setVisitors(data);
-            } catch (error) {
-                console.error("Failed to fetch visitor data:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchVisitors();
+        loadVisitors();
     }, []);
 
-    const handleViewDetails = async (visitorHash: string) => {
+    const loadVisitors = async () => {
+        setLoading(true);
+        setError('');
         try {
-            const { data } = await api.get<VisitorDetail>(`/api/admin/analytics/visitors/${visitorHash}`);
-            setSelectedVisitorDetail(data);
-            setIsModalOpen(true);
-        } catch (error) {
-            console.error("Failed to fetch visitor details:", error);
+            const { data } = await api.get<VisitorSummary[]>('/api/admin/analytics/visitors');
+            setVisitors(Array.isArray(data) ? data : []);
+        } catch (err: unknown) {
+            const errorMessage = err instanceof Error ? err.message : 'Gagal memuat data pengunjung';
+            setError(errorMessage);
+        } finally {
+            setLoading(false);
         }
     };
 
-    const handleCloseModal = () => {
-        setIsModalOpen(false);
-        setSelectedVisitorDetail(null);
+    const handleViewDetails = async (visitorHash: string) => {
+        if (!visitorHash) {
+            setError('Visitor hash tidak valid.');
+            return;
+        }
+        try {
+            const { data } = await api.get<VisitorDetail>(`/api/admin/analytics/visitors/${visitorHash}`);
+            setSelectedDetail(data);
+            setModalOpen(true);
+        } catch (err) {
+            console.error('Failed to fetch visitor details:', err);
+            setError('Gagal memuat detail pengunjung');
+        }
     };
 
+    const columns: GridColDef[] = [
+        {
+            field: 'visitorNumber',
+            headerName: 'Visitor ID',
+            width: 150,
+            renderCell: (params) => `Visitor #${params.value}`,
+        },
+        {
+            field: 'totalPageViews',
+            headerName: 'Total Page Views',
+            width: 180,
+            type: 'number',
+        },
+        {
+            field: 'firstVisit',
+            headerName: 'First Visit',
+            width: 200,
+            valueFormatter: (value: string) => formatDate(value),
+        },
+        {
+            field: 'lastVisit',
+            headerName: 'Last Visit',
+            width: 200,
+            valueFormatter: (value: string) => formatDate(value),
+        },
+        {
+            field: 'actions',
+            headerName: 'Actions',
+            width: 150,
+            sortable: false,
+            renderCell: (params: GridRenderCellParams<any, VisitorSummary>) => (
+                <Button
+                    size="small"
+                    onClick={() => handleViewDetails(params.row.visitorHash)}
+                >
+                    View Details
+                </Button>
+            ),
+        },
+    ];
+
+    const rows = visitors.map((v) => ({
+        id: v.visitorNumber,
+        ...v
+    }));
+
     if (loading) {
-        return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}><CircularProgress /></Box>;
+        return (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                <CircularProgress />
+            </Box>
+        );
     }
 
     return (
         <Box>
-            <Typography variant="h4" gutterBottom>Visitor Analytics</Typography>
-            <TableContainer component={Paper}>
-                <Table sx={{ minWidth: 650 }}>
-                    <TableHead>
-                        <TableRow>
-                            <TableCell>Visitor ID</TableCell>
-                            <TableCell align="right">Total Page Views</TableCell>
-                            <TableCell align="right">First Visit</TableCell>
-                            <TableCell align="right">Last Visit</TableCell>
-                            <TableCell align="right">Actions</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {visitors.map((visitor) => (
-                            <TableRow key={visitor.visitorHash}>
-                                <TableCell component="th" scope="row">
-                                    Visitor #{visitor.visitorNumber}
-                                </TableCell>
-                                <TableCell align="right">{visitor.totalPageViews}</TableCell>
-                                <TableCell align="right">{format(new Date(visitor.firstVisit), 'dd MMM yyyy, HH:mm')}</TableCell>
-                                <TableCell align="right">{format(new Date(visitor.lastVisit), 'dd MMM yyyy, HH:mm')}</TableCell>
-                                <TableCell align="right">
-                                    <Button variant="outlined" size="small" onClick={() => handleViewDetails(visitor.visitorHash)}>
-                                        View Details
-                                    </Button>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </TableContainer>
-
-            <VisitorDetailModal
-                detail={selectedVisitorDetail}
-                open={isModalOpen}
-                onClose={handleCloseModal}
-            />
+            <Typography variant="h4" fontWeight={700} mb={3}>
+                Visitor Analytics
+            </Typography>
+            {error && (
+                <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>
+                    {error}
+                </Alert>
+            )}
+            <Paper>
+                <DataGrid
+                    rows={rows}
+                    columns={columns}
+                    pageSizeOptions={[10, 25, 50]}
+                    initialState={{
+                        pagination: { paginationModel: { pageSize: 10 } },
+                    }}
+                    sx={{ minHeight: 400 }}
+                    autoHeight
+                    disableRowSelectionOnClick
+                />
+            </Paper>
+            {selectedDetail && (
+                <VisitorDetailModal
+                    detail={selectedDetail}
+                    open={modalOpen}
+                    onClose={() => setModalOpen(false)}
+                />
+            )}
         </Box>
     );
 }

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useParams, useLocation, Link as RouterLink } from 'react-router-dom'
-import { Box, Button, Chip, Container, Divider, Paper, Stack, Typography, CircularProgress, Link } from '@mui/material'
+import { Container, Typography, Box, CircularProgress, Paper, Stack, Chip, Button, Link, Divider } from '@mui/material'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import GitHubIcon from '@mui/icons-material/GitHub'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
@@ -95,13 +95,13 @@ export default function ProjectDetail() {
                     </motion.div>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <div className="md:col-span-2 order-2 md:order-1">
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                    <div className="lg:col-span-3 order-2 lg:order-1">
                         <ProjectBody body={data.body} />
 
                         {gallery.length > 0 && (
                             <>
-                                <Divider sx={{ my: 3 }} />
+                                <Divider sx={{ my: 4 }} />
                                 <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>Galeri</Typography>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                                     {gallery.map((src, i) => (
@@ -143,26 +143,76 @@ export default function ProjectDetail() {
                             </>
                         )}
                     </div>
-                    <div className="md:col-span-1 order-1 md:order-2">
-                        <Box sx={{ position: 'sticky', top: '100px' }}>
-                            <Paper variant="outlined" sx={{ p: 2, borderRadius: 3 }}>
-                                <Stack spacing={2}>
-                                    <Typography fontWeight={600}>Ringkasan</Typography>
-                                    <Typography variant="body2" color="text.secondary">{data.summary}</Typography>
+
+                    <div className="lg:col-span-1 order-1 lg:order-2">
+                        <Box sx={{ position: { lg: 'sticky' }, top: { lg: '100px' } }}>
+                            <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3, bgcolor: 'background.paper' }}>
+                                <Stack spacing={2.5}>
+                                    <Box>
+                                        <Typography fontWeight={700} fontSize="1.1rem" gutterBottom>Ringkasan</Typography>
+                                        <Typography variant="body2" color="text.secondary" lineHeight={1.7}>
+                                            {data.summary}
+                                        </Typography>
+                                    </Box>
+
                                     <Divider />
-                                    <Typography fontWeight={600}>Teknologi</Typography>
-                                    <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                                        {techStack.map((tech) => <Chip key={tech} label={tech} size="small" />)}
-                                    </Stack>
-                                    <Divider />
-                                    <Stack spacing={1}>
-                                        {data.demo_url && (
-                                            <Button component={Link} href={data.demo_url} target="_blank" rel="noreferrer" endIcon={<OpenInNewIcon />} variant="contained">Lihat Demo</Button>
-                                        )}
-                                        {data.repo_url && (
-                                            <Button component={Link} href={data.repo_url} target="_blank" rel="noreferrer" startIcon={<GitHubIcon />} variant="outlined">Lihat Kode</Button>
-                                        )}
-                                    </Stack>
+
+                                    <Box>
+                                        <Typography fontWeight={700} fontSize="1.1rem" gutterBottom>Teknologi</Typography>
+                                        <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                                            {techStack.map((tech) => (
+                                                <Chip
+                                                    key={tech}
+                                                    label={tech}
+                                                    size="small"
+                                                    sx={{
+                                                        fontWeight: 600,
+                                                        bgcolor: 'primary.50',
+                                                        color: 'primary.700',
+                                                        '&:hover': {
+                                                            bgcolor: 'primary.100'
+                                                        }
+                                                    }}
+                                                />
+                                            ))}
+                                        </Stack>
+                                    </Box>
+
+                                    {(data.demo_url || data.repo_url) && (
+                                        <>
+                                            <Divider />
+                                            <Stack spacing={1.5}>
+                                                {data.demo_url && (
+                                                    <Button
+                                                        component={Link}
+                                                        href={data.demo_url}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                        endIcon={<OpenInNewIcon />}
+                                                        variant="contained"
+                                                        fullWidth
+                                                        sx={{ textTransform: 'none', fontWeight: 600 }}
+                                                    >
+                                                        Lihat Demo
+                                                    </Button>
+                                                )}
+                                                {data.repo_url && (
+                                                    <Button
+                                                        component={Link}
+                                                        href={data.repo_url}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                        startIcon={<GitHubIcon />}
+                                                        variant="outlined"
+                                                        fullWidth
+                                                        sx={{ textTransform: 'none', fontWeight: 600 }}
+                                                    >
+                                                        Lihat Kode
+                                                    </Button>
+                                                )}
+                                            </Stack>
+                                        </>
+                                    )}
                                 </Stack>
                             </Paper>
                         </Box>

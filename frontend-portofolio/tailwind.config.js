@@ -1,3 +1,5 @@
+import typography from '@tailwindcss/typography'
+
 export default {
   content: [
     "./index.html",
@@ -44,7 +46,89 @@ export default {
       backdropBlur: {
         xs: '2px',
       },
+      typography: (theme) => ({
+        DEFAULT: {
+          css: {
+            color: theme('colors.slate.700'),
+            maxWidth: 'none',
+            a: {
+              color: theme('colors.primary.600'),
+              '&:hover': {
+                color: theme('colors.primary.700'),
+              },
+            },
+            'h1, h2, h3, h4, h5, h6': {
+              color: theme('colors.slate.900'),
+              fontWeight: '700',
+            },
+            code: {
+              color: theme('colors.pink.600'),
+              backgroundColor: theme('colors.slate.100'),
+              padding: '0.25rem 0.375rem',
+              borderRadius: '0.25rem',
+              fontWeight: '600',
+            },
+            'code::before': {
+              content: '""',
+            },
+            'code::after': {
+              content: '""',
+            },
+            pre: {
+              backgroundColor: theme('colors.slate.900'),
+              color: theme('colors.slate.100'),
+            },
+            blockquote: {
+              borderLeftColor: theme('colors.primary.500'),
+              color: theme('colors.slate.700'),
+            },
+            table: {
+              width: '100%',
+            },
+            'thead th': {
+              backgroundColor: theme('colors.slate.100'),
+            },
+            'tbody tr': {
+              borderBottomColor: theme('colors.slate.200'),
+            },
+          },
+        },
+        invert: {
+          css: {
+            color: theme('colors.slate.300'),
+            a: {
+              color: theme('colors.primary.400'),
+              '&:hover': {
+                color: theme('colors.primary.300'),
+              },
+            },
+            'h1, h2, h3, h4, h5, h6': {
+              color: theme('colors.slate.100'),
+            },
+            code: {
+              color: theme('colors.pink.400'),
+              backgroundColor: theme('colors.slate.800'),
+            },
+            pre: {
+              backgroundColor: theme('colors.slate.950'),
+              color: theme('colors.slate.200'),
+            },
+            blockquote: {
+              borderLeftColor: theme('colors.primary.400'),
+              color: theme('colors.slate.300'),
+            },
+            'thead th': {
+              backgroundColor: theme('colors.slate.800'),
+            },
+            'tbody tr': {
+              borderBottomColor: theme('colors.slate.700'),
+            },
+          },
+        },
+      }),
     },
   },
-  plugins: [],
+  plugins: [
+    typography,
+  ],
 }

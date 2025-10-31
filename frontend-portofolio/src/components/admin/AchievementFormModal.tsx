@@ -22,32 +22,41 @@ export default function AchievementFormModal({
     const [loading, setLoading] = useState(false)
 
     useEffect(() => {
-        if (initialData) {
-            setTitle(initialData.title || '')
-            setIssuer(initialData.issuer || '')
-            setDate(initialData.date ? new Date(initialData.date).toISOString().split('T')[0] : '')
-            setDescription(initialData.description || '')
-            setCredentialUrl(initialData.credential_url || '')
-        } else {
-            setTitle('')
-            setIssuer('')
-            setDate('')
-            setDescription('')
-            setCredentialUrl('')
+        if (open) {
+            if (initialData) {
+                setTitle(initialData.title || '')
+                setIssuer(initialData.issuer || '')
+                setDate(initialData.date ? new Date(initialData.date).toISOString().split('T')[0] : '')
+                setDescription(initialData.description || '')
+                setCredentialUrl(initialData.credential_url || '')
+            } else {
+                setTitle('')
+                setIssuer('')
+                setDate('')
+                setDescription('')
+                setCredentialUrl('')
+            }
         }
     }, [initialData, open])
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault()
+
+        if (!title.trim() || !issuer.trim() || !date) {
+            return
+        }
+
         setLoading(true)
         try {
+            const formattedDate = new Date(date).toISOString()
+
             await onSubmit({
-                title,
-                issuer,
-                date,
-                description,
-                credential_url: credentialUrl,
-                link_text: 'View Credential', // Default value
+                title: title.trim(),
+                issuer: issuer.trim(),
+                date: formattedDate,
+                description: description.trim(),
+                credential_url: credentialUrl.trim(),
+                link_text: 'View Credential',
             })
             onClose()
         } catch (error) {

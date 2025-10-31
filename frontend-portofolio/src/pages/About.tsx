@@ -1,14 +1,14 @@
-import { useEffect, useState, useMemo, ReactNode } from 'react';
-import { Box, CircularProgress, Typography, Paper, Divider, Link } from '@mui/material';
+import { useEffect, useState, useMemo } from 'react';
+import { Box, CircularProgress, Typography, Paper, Divider, Container, Link } from '@mui/material';
+import { fetchPublicProfile } from '@/api/profile';
+import { fetchPublicSkills } from '@/api/skills';
+import { fetchPublicExperiences } from '@/api/experiences';
+import { fetchPublicAchievements } from '@/api/achievements';
+import ProfileHeader from '@/components/public/ProfileHeader';
+import SkillChips from '@/components/public/SkillChips';
+import ExperienceTimeline from '@/components/public/ExperienceTimeline';
 import { motion } from 'framer-motion';
-import { fetchPublicProfile } from '../api/profile';
-import { fetchPublicSkills } from '../api/skills';
-import { fetchPublicExperiences } from '../api/experiences';
-import { fetchPublicAchievements } from '../api/achievements';
-import ProfileHeader from '../components/public/ProfileHeader';
-import SkillChips from '../components/public/SkillChips';
-import ExperienceTimeline from '../components/public/ExperienceTimeline';
-import type { Profile, Skill, Experience, Achievement } from '../types';
+import type { Profile, Skill, Experience, Achievement } from '@/types';
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -20,7 +20,12 @@ const itemVariants = {
     visible: { y: 0, opacity: 1 },
 };
 
-function Section({ title, children }: { title: string, children: ReactNode }) {
+interface SectionProps {
+    title: string;
+    children: React.ReactNode;
+}
+
+function Section({ title, children }: SectionProps) {
     return (
         <Box
             component={motion.div}
@@ -76,8 +81,6 @@ export default function About() {
                 setSkills(s);
                 setExperiences(e);
                 setAchievements(a);
-            } catch (error) {
-                console.error("Failed to load about page data:", error);
             } finally {
                 setLoading(false);
             }
@@ -86,68 +89,99 @@ export default function About() {
     }, []);
 
     const { workExperiences, orgExperiences, educationExperiences } = useMemo(() => {
-        const work = experiences.filter(e => e.type === 'Pekerjaan Penuh Waktu' || e.type === 'Magang');
-        const org = experiences.filter(e => e.type === 'Organisasi');
-        const edu = experiences.filter(e => e.type === 'Pendidikan');
+        const work = experiences.filter((e) => e.type === 'Pekerjaan Penuh Waktu' || e.type === 'Magang');
+        const org = experiences.filter((e) => e.type === 'Organisasi');
+        const edu = experiences.filter((e) => e.type === 'Pendidikan');
         return { workExperiences: work, orgExperiences: org, educationExperiences: edu };
     }, [experiences]);
 
     const skillGroupOrder = useMemo(() => {
         try {
-            return profile?.skill_group_order ? JSON.parse(profile.skill_group_order) : [];
+            return JSON.parse(profile?.skill_group_order || '[]') as string[];
         } catch {
             return [];
         }
     }, [profile]);
 
     if (loading) {
-        return <Box sx={{ display: 'grid', placeItems: 'center', minHeight: '80vh' }}><CircularProgress /></Box>;
+        return (
+            <Box sx={{ display: 'grid', placeItems: 'center', minHeight: '80vh' }}>
+                <CircularProgress />
+            </Box>
+        );
     }
 
     return (
-        <motion.div variants={containerVariants} initial="hidden" animate="visible">
-            {profile && <motion.div variants={itemVariants}><ProfileHeader profile={profile} /></motion.div>}
+        <Container>
+            <motion.div variants={containerVariants} initial="hidden" animate="visible">
+                <motion.div variants={itemVariants}>
+                    <ProfileHeader profile={profile} />
+                </motion.div>
 
-            {profile?.bio && (
-                <Section title="Tentang Saya">
-                    <Paper sx={{ p: { xs: 2, md: 4 } }}>
-                        <Typography color="text.secondary" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.7, fontSize: '1.1rem' }}>
-                            {profile.bio}
-                        </Typography>
-                    </Paper>
-                </Section>
-            )}
+                {profile?.bio && (
+                    <Section title="Tentang Saya">
+                        <Paper sx={{ p: { xs: 2, md: 4 } }}>
+                            <Typography
+                                color="text.secondary"
+                                sx={{
+                                    whiteSpace: 'pre-wrap',
+                                    lineHeight: 1.7,
+                                    fontSize: '1.1rem',
+                                }}
+                            >
+                                {profile.bio}
+                            </Typography>
+                        </Paper>
+                    </Section>
+                )}
 
-            {workExperiences.length > 0 && (<Section title="Pengalaman Kerja"><ExperienceTimeline experiences={workExperiences} /></Section>)}
-            {orgExperiences.length > 0 && (<Section title="Organisasi & Kepemimpinan"><ExperienceTimeline experiences={orgExperiences} /></Section>)}
-            {educationExperiences.length > 0 && (<Section title="Pendidikan"><ExperienceTimeline experiences={educationExperiences} /></Section>)}
+                {workExperiences.length > 0 && (
+                    <Section title="Pengalaman Kerja">
+                        <ExperienceTimeline experiences={workExperiences} />
+                    </Section>
+                )}
 
-            {skills.length > 0 && (
-                <Section title="Keahlian & Teknologi">
-                    <Paper sx={{ p: { xs: 2, md: 4 } }}>
-                        <SkillChips skills={skills} groupOrder={skillGroupOrder} />
-                    </Paper>
-                </Section>
-            )}
+                {orgExperiences.length > 0 && (
+                    <Section title="Organisasi & Kepemimpinan">
+                        <ExperienceTimeline experiences={orgExperiences} />
+                    </Section>
+                )}
 
-            {achievements.length > 0 && (
-                <Section title="Pencapaian & Sertifikasi">
-                    <Paper sx={{ p: { xs: 2, md: 4 } }}>
-                        {achievements.map((item, index) => (
-                            <Box key={item.id} sx={{ mb: index === achievements.length - 1 ? 0 : 2 }}>
-                                <Typography fontWeight={700}>{item.title}</Typography>
-                                <Typography variant="body2" color="text.secondary">{item.issuer} - {new Date(item.date).getFullYear()}</Typography>
-                                {item.credential_url && (
-                                    <Link href={item.credential_url} target="_blank" variant="caption">
-                                        {item.link_text || 'Lihat Kredensial'}
-                                    </Link>
-                                )}
-                                {index !== achievements.length - 1 && <Divider sx={{ my: 2 }} />}
-                            </Box>
-                        ))}
-                    </Paper>
-                </Section>
-            )}
-        </motion.div>
+                {educationExperiences.length > 0 && (
+                    <Section title="Pendidikan">
+                        <ExperienceTimeline experiences={educationExperiences} />
+                    </Section>
+                )}
+
+                {skills.length > 0 && (
+                    <Section title="Keahlian & Teknologi">
+                        <Paper sx={{ p: { xs: 2, md: 4 } }}>
+                            <SkillChips skills={skills} groupOrder={skillGroupOrder} />
+                        </Paper>
+                    </Section>
+                )}
+
+                {achievements.length > 0 && (
+                    <Section title="Pencapaian & Sertifikasi">
+                        <Paper sx={{ p: { xs: 2, md: 4 } }}>
+                            {achievements.map((item, index) => (
+                                <Box key={item.id} sx={{ mb: index === achievements.length - 1 ? 0 : 2 }}>
+                                    <Typography fontWeight={700}>{item.title}</Typography>
+                                    <Typography variant="body2" color="text.secondary">
+                                        {item.issuer} - {new Date(item.date).getFullYear()}
+                                    </Typography>
+                                    {item.credential_url && (
+                                        <Link href={item.credential_url} target="_blank" variant="caption">
+                                            {item.link_text || 'Lihat Kredensial'}
+                                        </Link>
+                                    )}
+                                    {index !== achievements.length - 1 && <Divider sx={{ my: 2 }} />}
+                                </Box>
+                            ))}
+                        </Paper>
+                    </Section>
+                )}
+            </motion.div>
+        </Container>
     );
 }

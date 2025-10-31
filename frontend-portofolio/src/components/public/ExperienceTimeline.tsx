@@ -1,65 +1,147 @@
-import { Experience } from '../../types'
+import { Box, Typography, Chip, Paper, Stack } from '@mui/material';
+import { motion } from 'framer-motion';
+import WorkIcon from '@mui/icons-material/Work';
+import SchoolIcon from '@mui/icons-material/School';
+import GroupsIcon from '@mui/icons-material/Groups';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import type { Experience } from '@/types';
 
 interface ExperienceTimelineProps {
-    experiences: Experience[]
+    experiences: Experience[];
 }
+
+const getTypeIcon = (type: string) => {
+    if (type === 'Pekerjaan Penuh Waktu') return <WorkIcon fontSize="small" />;
+    if (type === 'Magang') return <WorkIcon fontSize="small" />;
+    if (type === 'Organisasi') return <GroupsIcon fontSize="small" />;
+    if (type === 'Pendidikan') return <SchoolIcon fontSize="small" />;
+    return <WorkIcon fontSize="small" />;
+};
+
+const getTypeColor = (type: string): 'primary' | 'secondary' | 'success' | 'info' => {
+    if (type === 'Pekerjaan Penuh Waktu') return 'primary';
+    if (type === 'Magang') return 'info';
+    if (type === 'Organisasi') return 'secondary';
+    if (type === 'Pendidikan') return 'success';
+    return 'primary';
+};
 
 export default function ExperienceTimeline({ experiences }: ExperienceTimelineProps) {
     const formatDate = (date: string | null): string => {
-        if (!date) return 'Present'
-        return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'short' })
-    }
+        if (!date) return 'Present';
+        return new Date(date).toLocaleDateString('id-ID', { year: 'numeric', month: 'short' });
+    };
 
     const sortedExperiences = [...experiences].sort((a, b) => {
-        const aDate = a.end_date === null ? new Date() : new Date(a.start_date)
-        const bDate = b.end_date === null ? new Date() : new Date(b.start_date)
-        return bDate.getTime() - aDate.getTime()
-    })
+        const aDate = a.end_date === null ? new Date() : new Date(a.start_date);
+        const bDate = b.end_date === null ? new Date() : new Date(b.start_date);
+        return bDate.getTime() - aDate.getTime();
+    });
 
     if (experiences.length === 0) {
         return (
-            <div className="text-center py-12">
-                <p className="text-gray-500 dark:text-gray-400">No experience data available</p>
-            </div>
-        )
+            <Box sx={{ textAlign: 'center', py: 6 }}>
+                <Typography color="text.secondary">Belum ada data pengalaman</Typography>
+            </Box>
+        );
     }
 
     return (
-        <div className="relative">
-            <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gradient-to-b from-primary-500 to-secondary-500 transform -translate-x-1/2" />
+        <Box sx={{ position: 'relative' }}>
+            <Box
+                sx={{
+                    position: 'absolute',
+                    left: { xs: 16, sm: 20 },
+                    top: 0,
+                    bottom: 0,
+                    width: '2px',
+                    background: 'linear-gradient(to bottom, rgba(124,58,237,0.8), rgba(6,182,212,0.8))',
+                }}
+            />
 
-            <div className="space-y-8">
-                {sortedExperiences.map((exp) => (
-                    <div key={exp.id} className="relative pl-12">
-                        <div className="absolute left-4 top-2 w-4 h-4 rounded-full bg-primary-500 border-4 border-white dark:border-gray-900 shadow-lg transform -translate-x-1/2" />
+            <Stack spacing={4}>
+                {sortedExperiences.map((exp, index) => (
+                    <Box
+                        key={exp.id}
+                        component={motion.div}
+                        initial={{ opacity: 0, x: -20 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: index * 0.1 }}
+                        sx={{ position: 'relative', pl: { xs: 6, sm: 8 } }}
+                    >
+                        <Box
+                            sx={{
+                                position: 'absolute',
+                                left: { xs: 12, sm: 16 },
+                                top: 16,
+                                width: 16,
+                                height: 16,
+                                borderRadius: '50%',
+                                bgcolor: 'primary.main',
+                                border: '4px solid',
+                                borderColor: 'background.paper',
+                                boxShadow: '0 0 0 4px rgba(124,58,237,0.2)',
+                                zIndex: 1,
+                            }}
+                        />
 
-                        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow border border-gray-100 dark:border-gray-700">
-                            <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
-                                <div>
-                                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
-                                        {exp.title}
-                                    </h3>
-                                    <p className="text-lg text-primary-600 dark:text-primary-400 font-medium">
-                                        {exp.entity_name}
-                                    </p>
-                                </div>
-                                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 dark:bg-gray-700">
-                                    <svg className="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                    </svg>
-                                    <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">
-                                        {formatDate(exp.start_date)} - {formatDate(exp.end_date)}
-                                    </span>
-                                </div>
-                            </div>
+                        <Paper
+                            sx={{
+                                p: { xs: 2, md: 3 },
+                                borderRadius: 3,
+                                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                                transition: 'all 0.3s',
+                                '&:hover': {
+                                    boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
+                                    transform: 'translateY(-2px)',
+                                },
+                            }}
+                        >
+                            <Stack spacing={2}>
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                                    <Box sx={{ flex: 1, minWidth: 200 }}>
+                                        <Typography variant="h6" fontWeight={700} gutterBottom>
+                                            {exp.title}
+                                        </Typography>
+                                        <Typography variant="body1" color="primary.main" fontWeight={600}>
+                                            {exp.entity_name}
+                                        </Typography>
+                                    </Box>
 
-                            <p className="text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
-                                {exp.description}
-                            </p>
-                        </div>
-                    </div>
+                                    <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                                        <Chip
+                                            icon={getTypeIcon(exp.type)}
+                                            label={exp.type}
+                                            color={getTypeColor(exp.type)}
+                                            size="small"
+                                            sx={{ fontWeight: 600 }}
+                                        />
+                                        <Chip
+                                            icon={<CalendarTodayIcon fontSize="small" />}
+                                            label={`${formatDate(exp.start_date)} - ${formatDate(exp.end_date)}`}
+                                            variant="outlined"
+                                            size="small"
+                                            sx={{ fontWeight: 500 }}
+                                        />
+                                    </Stack>
+                                </Box>
+
+                                <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                    sx={{
+                                        whiteSpace: 'pre-wrap',
+                                        lineHeight: 1.7,
+                                    }}
+                                >
+                                    {exp.description}
+                                </Typography>
+                            </Stack>
+                        </Paper>
+                    </Box>
                 ))}
-            </div>
-        </div>
-    )
+            </Stack>
+        </Box>
+    );
 }

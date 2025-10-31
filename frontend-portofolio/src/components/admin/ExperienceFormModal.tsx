@@ -1,117 +1,237 @@
-import { useState, useEffect, FormEvent } from 'react';
-import { Experience } from '../../types';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Stack, MenuItem, Grid, Typography } from '@mui/material'
+import { useFormik } from 'formik'
+import * as Yup from 'yup'
+import { useEffect } from 'react'
+import { getYear, getMonth } from 'date-fns'
+import { Experience } from '../../types'
 
 interface ExperienceFormModalProps {
-    open: boolean;
-    onClose: () => void;
-    onSubmit: (data: Partial<Omit<Experience, 'id' | 'created_at' | 'updated_at'>>) => Promise<void>;
-    initialData?: Experience | null;
+    open: boolean
+    onClose: () => void
+    onSubmit: (data: Partial<Omit<Experience, 'id' | 'created_at' | 'updated_at'>>) => Promise<void>
+    initialData?: Experience | null
+}
+
+const validationSchema = Yup.object({
+    type: Yup.string().required('Tipe wajib dipilih'),
+    title: Yup.string().required('Judul/Posisi wajib diisi'),
+    entity_name: Yup.string().required('Nama perusahaan/kampus wajib diisi'),
+    start_year: Yup.number().required('Tahun mulai wajib diisi'),
+    start_month: Yup.number().required('Bulan mulai wajib diisi'),
+})
+
+const MONTHS = [
+    { value: 0, label: 'Januari' },
+    { value: 1, label: 'Februari' },
+    { value: 2, label: 'Maret' },
+    { value: 3, label: 'April' },
+    { value: 4, label: 'Mei' },
+    { value: 5, label: 'Juni' },
+    { value: 6, label: 'Juli' },
+    { value: 7, label: 'Agustus' },
+    { value: 8, label: 'September' },
+    { value: 9, label: 'Oktober' },
+    { value: 10, label: 'November' },
+    { value: 11, label: 'Desember' },
+]
+
+interface FormValues {
+    type: string
+    title: string
+    entity_name: string
+    location: string
+    description: string
+    start_month: number | string
+    start_year: number | string
+    end_month: number | string
+    end_year: number | string
 }
 
 export default function ExperienceFormModal({ open, onClose, onSubmit, initialData }: ExperienceFormModalProps) {
-    const [type, setType] = useState('Work');
-    const [title, setTitle] = useState('');
-    const [entityName, setEntityName] = useState('');
-    const [location, setLocation] = useState('');
-    const [description, setDescription] = useState('');
-    const [startDate, setStartDate] = useState('');
-    const [endDate, setEndDate] = useState('');
-    const [isCurrent, setIsCurrent] = useState(false);
-    const [loading, setLoading] = useState(false);
+    const formik = useFormik<FormValues>({
+        initialValues: {
+            type: 'Magang',
+            title: '',
+            entity_name: '',
+            location: '',
+            description: '',
+            start_month: '',
+            start_year: '',
+            end_month: '',
+            end_year: '',
+        },
+        validationSchema,
+        onSubmit: (values) => {
+            const startDate = new Date(Number(values.start_year), Number(values.start_month))
+            const endDate = (values.end_year && values.end_month !== '')
+                ? new Date(Number(values.end_year), Number(values.end_month))
+                : null
+
+            const payload: Partial<Omit<Experience, 'id' | 'created_at' | 'updated_at'>> = {
+                type: values.type,
+                title: values.title,
+                entity_name: values.entity_name,
+                location: values.location,
+                description: values.description,
+                start_date: startDate.toISOString(),
+                end_date: endDate ? endDate.toISOString() : null,
+            }
+
+            onSubmit(payload)
+        },
+    })
 
     useEffect(() => {
-        if (initialData) {
-            setType(initialData.type || 'Work');
-            setTitle(initialData.title || '');
-            setEntityName(initialData.entity_name || '');
-            setLocation(initialData.location || '');
-            setDescription(initialData.description || '');
-            setStartDate(initialData.start_date ? new Date(initialData.start_date).toISOString().split('T')[0] : '');
-            setEndDate(initialData.end_date ? new Date(initialData.end_date).toISOString().split('T')[0] : '');
-            setIsCurrent(initialData.end_date === null);
-        } else {
-            // Reset form
-            setType('Work');
-            setTitle('');
-            setEntityName('');
-            setLocation('');
-            setDescription('');
-            setStartDate('');
-            setEndDate('');
-            setIsCurrent(false);
-        }
-    }, [initialData, open]);
+        if (open) {
+            formik.resetForm()
+            if (initialData) {
+                const startDate = initialData.start_date ? new Date(initialData.start_date) : null
+                const endDate = initialData.end_date ? new Date(initialData.end_date) : null
 
-    const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        setLoading(true);
-        try {
-            await onSubmit({
-                type,
-                title,
-                entity_name: entityName,
-                location,
-                description,
-                start_date: startDate,
-                end_date: isCurrent ? null : endDate,
-            });
-            onClose();
-        } catch (error) {
-            console.error('Error submitting experience:', error);
-        } finally {
-            setLoading(false);
+                formik.setValues({
+                    type: initialData.type || 'Magang',
+                    title: initialData.title || '',
+                    entity_name: initialData.entity_name || '',
+                    location: initialData.location || '',
+                    description: initialData.description || '',
+                    start_month: startDate ? getMonth(startDate) : '',
+                    start_year: startDate ? getYear(startDate) : '',
+                    end_month: endDate ? getMonth(endDate) : '',
+                    end_year: endDate ? getYear(endDate) : '',
+                }, false)
+            }
         }
-    };
-
-    if (!open) return null;
+    }, [open, initialData])
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-                <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-between items-center">
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                        {initialData ? 'Edit Experience' : 'Add Experience'}
-                    </h2>
-                    <button onClick={onClose} type="button" className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                    </button>
-                </div>
-                <form onSubmit={handleSubmit} className="p-6 space-y-6">
-                    {/* Form fields go here */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Title / Position</label>
-                            <input type="text" value={title} onChange={e => setTitle(e.target.value)} required className="w-full input-class" />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Company / Organization</label>
-                            <input type="text" value={entityName} onChange={e => setEntityName(e.target.value)} required className="w-full input-class" />
-                        </div>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Description</label>
-                        <textarea value={description} onChange={e => setDescription(e.target.value)} rows={4} className="w-full input-class" />
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Start Date</label>
-                            <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} required className="w-full input-class" />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">End Date</label>
-                            <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} disabled={isCurrent} className="w-full input-class" />
-                        </div>
-                    </div>
-                    <div className="flex items-center">
-                        <input type="checkbox" id="isCurrent" checked={isCurrent} onChange={e => setIsCurrent(e.target.checked)} className="h-4 w-4 text-primary-600 border-gray-300 rounded" />
-                        <label htmlFor="isCurrent" className="ml-2 block text-sm text-gray-900 dark:text-gray-300">I currently work here</label>
-                    </div>
-                    <div className="flex gap-3 pt-4">
-                        <button type="button" onClick={onClose} className="flex-1 btn-secondary">Cancel</button>
-                        <button type="submit" disabled={loading} className="flex-1 btn-primary">{loading ? 'Saving...' : 'Save'}</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    );
+        <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+            <form onSubmit={formik.handleSubmit}>
+                <DialogTitle fontWeight={700}>
+                    {initialData ? 'Edit Pengalaman' : 'Tambah Pengalaman'}
+                </DialogTitle>
+                <DialogContent>
+                    <Stack spacing={2} sx={{ pt: 1 }}>
+                        <TextField
+                            select
+                            label="Tipe"
+                            value={formik.values.type}
+                            onChange={(e) => formik.setFieldValue('type', e.target.value)}
+                            fullWidth
+                        >
+                            <MenuItem value="Pekerjaan Penuh Waktu">Pekerjaan Penuh Waktu</MenuItem>
+                            <MenuItem value="Magang">Magang</MenuItem>
+                            <MenuItem value="Organisasi">Organisasi</MenuItem>
+                            <MenuItem value="Pendidikan">Pendidikan</MenuItem>
+                        </TextField>
+
+                        <TextField
+                            label="Judul / Posisi"
+                            value={formik.values.title}
+                            onChange={(e) => formik.setFieldValue('title', e.target.value)}
+                            onBlur={formik.handleBlur('title')}
+                            error={formik.touched.title && Boolean(formik.errors.title)}
+                            helperText={formik.touched.title && formik.errors.title}
+                            fullWidth
+                        />
+
+                        <TextField
+                            label="Nama Perusahaan / Kampus / Organisasi"
+                            value={formik.values.entity_name}
+                            onChange={(e) => formik.setFieldValue('entity_name', e.target.value)}
+                            onBlur={formik.handleBlur('entity_name')}
+                            error={formik.touched.entity_name && Boolean(formik.errors.entity_name)}
+                            helperText={formik.touched.entity_name && formik.errors.entity_name}
+                            fullWidth
+                        />
+
+                        <TextField
+                            label="Lokasi (opsional)"
+                            value={formik.values.location}
+                            onChange={(e) => formik.setFieldValue('location', e.target.value)}
+                            fullWidth
+                        />
+
+                        <TextField
+                            label="Deskripsi (opsional)"
+                            multiline
+                            rows={4}
+                            value={formik.values.description}
+                            onChange={(e) => formik.setFieldValue('description', e.target.value)}
+                            fullWidth
+                        />
+
+                        <Typography variant="subtitle2" color="text.secondary">
+                            Tanggal Mulai
+                        </Typography>
+                        <Grid container spacing={2}>
+                            <Grid size={{ xs: 6 }}>
+                                <TextField
+                                    select
+                                    label="Bulan"
+                                    value={formik.values.start_month}
+                                    onChange={(e) => formik.setFieldValue('start_month', e.target.value)}
+                                    onBlur={formik.handleBlur('start_month')}
+                                    error={formik.touched.start_month && Boolean(formik.errors.start_month)}
+                                    fullWidth
+                                >
+                                    {MONTHS.map(m => (
+                                        <MenuItem key={m.value} value={m.value}>
+                                            {m.label}
+                                        </MenuItem>
+                                    ))}
+                                </TextField>
+                            </Grid>
+                            <Grid size={{ xs: 6 }}>
+                                <TextField
+                                    type="number"
+                                    label="Tahun"
+                                    value={formik.values.start_year}
+                                    onChange={(e) => formik.setFieldValue('start_year', e.target.value)}
+                                    onBlur={formik.handleBlur('start_year')}
+                                    error={formik.touched.start_year && Boolean(formik.errors.start_year)}
+                                    fullWidth
+                                />
+                            </Grid>
+                        </Grid>
+
+                        <Typography variant="subtitle2" color="text.secondary">
+                            Tanggal Selesai (kosongkan jika masih berjalan)
+                        </Typography>
+                        <Grid container spacing={2}>
+                            <Grid size={{ xs: 6 }}>
+                                <TextField
+                                    select
+                                    label="Bulan"
+                                    value={formik.values.end_month}
+                                    onChange={(e) => formik.setFieldValue('end_month', e.target.value)}
+                                    fullWidth
+                                >
+                                    {MONTHS.map(m => (
+                                        <MenuItem key={m.value} value={m.value}>
+                                            {m.label}
+                                        </MenuItem>
+                                    ))}
+                                </TextField>
+                            </Grid>
+                            <Grid size={{ xs: 6 }}>
+                                <TextField
+                                    type="number"
+                                    label="Tahun"
+                                    value={formik.values.end_year}
+                                    onChange={(e) => formik.setFieldValue('end_year', e.target.value)}
+                                    fullWidth
+                                />
+                            </Grid>
+                        </Grid>
+                    </Stack>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={onClose}>Batal</Button>
+                    <Button type="submit" variant="contained" disabled={formik.isSubmitting}>
+                        Simpan
+                    </Button>
+                </DialogActions>
+            </form>
+        </Dialog>
+    )
 }

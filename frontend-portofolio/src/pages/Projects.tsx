@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Container, Typography, Box, Chip, Stack, TextField, InputAdornment } from '@mui/material'
+import { Container, Typography, Box, TextField, InputAdornment } from '@mui/material'
 import SearchIcon from '@mui/icons-material/Search'
 import { motion } from 'framer-motion'
 import { fetchPublicProjects } from '../api/projects'
@@ -11,7 +11,6 @@ export default function Projects() {
     const [filteredProjects, setFilteredProjects] = useState<Project[]>([])
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')
-    const [selectedTag, setSelectedTag] = useState<string | null>(null)
 
     useEffect(() => {
         const loadProjects = async () => {
@@ -33,23 +32,17 @@ export default function Projects() {
         let filtered = projects
 
         if (searchQuery) {
+            const lowerCaseQuery = searchQuery.toLowerCase()
             filtered = filtered.filter(
                 (p) =>
-                    p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    (p.summary && p.summary.toLowerCase().includes(searchQuery.toLowerCase()))
+                    p.title.toLowerCase().includes(lowerCaseQuery) ||
+                    (p.summary && p.summary.toLowerCase().includes(lowerCaseQuery)) ||
+                    (p.tech_stack && p.tech_stack.toLowerCase().includes(lowerCaseQuery))
             )
         }
 
-        if (selectedTag) {
-            filtered = filtered.filter((p) => p.tech_stack?.includes(selectedTag))
-        }
-
         setFilteredProjects(filtered)
-    }, [searchQuery, selectedTag, projects])
-
-    const allTags = Array.from(
-        new Set(projects.flatMap((p) => p.tech_stack?.split(',').map(t => t.trim()) || []))
-    ).sort()
+    }, [searchQuery, projects])
 
     if (loading) {
         return (
@@ -72,7 +65,7 @@ export default function Projects() {
 
                     <TextField
                         fullWidth
-                        placeholder="Search projects..."
+                        placeholder="Search by title, summary, or technology..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         InputProps={{
@@ -86,38 +79,13 @@ export default function Projects() {
                     />
                 </Box>
 
-                {allTags.length > 0 && (
-                    <Box sx={{ mb: 4 }}>
-                        <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-                            Filter by Technology:
-                        </Typography>
-                        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                            <Chip
-                                label="All"
-                                onClick={() => setSelectedTag(null)}
-                                color={selectedTag === null ? 'primary' : 'default'}
-                                sx={{ mb: 1 }}
-                            />
-                            {allTags.map((tag) => (
-                                <Chip
-                                    key={tag}
-                                    label={tag}
-                                    onClick={() => setSelectedTag(tag === selectedTag ? null : tag)}
-                                    color={selectedTag === tag ? 'primary' : 'default'}
-                                    sx={{ mb: 1 }}
-                                />
-                            ))}
-                        </Stack>
-                    </Box>
-                )}
-
                 {filteredProjects.length === 0 ? (
                     <Box sx={{ textAlign: 'center', py: 8 }}>
                         <Typography variant="h5" color="text.secondary">
                             No projects found
                         </Typography>
                         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                            Try adjusting your search or filters
+                            Try adjusting your search keywords
                         </Typography>
                     </Box>
                 ) : (
