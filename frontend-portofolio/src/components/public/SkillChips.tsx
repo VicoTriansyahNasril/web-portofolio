@@ -1,18 +1,19 @@
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, Paper } from '@mui/material';
 import { motion } from 'framer-motion';
 import { Skill } from '../../types';
+import CodeIcon from '@mui/icons-material/Code';
 
 const containerVariants = {
     hidden: {},
     visible: {
         transition: {
-            staggerChildren: 0.1,
+            staggerChildren: 0.05,
         },
     },
 };
 
 const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
+    hidden: { opacity: 0, y: 15 },
     visible: { opacity: 1, y: 0 },
 };
 
@@ -25,12 +26,12 @@ function SkillGroup({ title, items }: SkillGroupProps) {
     if (!items?.length) return null;
 
     return (
-        <Box sx={{ mb: 4 }}>
-            <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: 'text.secondary', borderBottom: 1, borderColor: 'divider', pb: 1 }}>
+        <Box sx={{ mb: 4, '&:last-child': { mb: 0 } }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: 'text.primary' }}>
                 {title}
             </Typography>
             <motion.div
-                className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-8 gap-y-4"
+                className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3"
                 variants={containerVariants}
                 initial="hidden"
                 whileInView="visible"
@@ -38,9 +39,27 @@ function SkillGroup({ title, items }: SkillGroupProps) {
             >
                 {items.map((skill) => (
                     <motion.div key={skill.id} variants={itemVariants}>
-                        <Typography sx={{ fontSize: '1.1rem' }}>
-                            {skill.name}
-                        </Typography>
+                        <Paper
+                            variant="outlined"
+                            sx={{
+                                p: 1.5,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
+                                transition: 'all 0.2s ease-in-out',
+                                bgcolor: 'action.hover',
+                                '&:hover': {
+                                    bgcolor: 'primary.main',
+                                    color: 'primary.contrastText',
+                                    transform: 'scale(1.05)',
+                                },
+                            }}
+                        >
+                            <CodeIcon fontSize="small" />
+                            <Typography sx={{ fontWeight: 500 }}>
+                                {skill.name}
+                            </Typography>
+                        </Paper>
                     </motion.div>
                 ))}
             </motion.div>

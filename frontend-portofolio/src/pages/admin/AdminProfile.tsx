@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Paper, Stack, Typography, TextField, Button, CircularProgress, Box, Divider } from '@mui/material';
+import { Paper, Stack, Typography, TextField, CircularProgress, Box, Divider } from '@mui/material';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { motion } from 'framer-motion';
@@ -113,7 +113,12 @@ export default function AdminProfile() {
                             </div>
                             <div className="md:col-span-3"><Divider /></div>
                             <div className="md:col-span-2">
-                                <SocialLinksManager links={formik.values.socials || []} onUpdate={(v: Social[]) => formik.setFieldValue('socials', v)} />
+                                <SocialLinksManager
+                                    links={formik.values.socials || []}
+                                    onUpdate={(v: Social[]) => formik.setFieldValue('socials', v)}
+                                    onSubmit={formik.submitForm}
+                                    isSubmitting={formik.isSubmitting}
+                                />
                             </div>
                             <div className="md:col-span-1">
                                 <SkillGroupOrderManager
@@ -125,9 +130,6 @@ export default function AdminProfile() {
                                 />
                             </div>
                         </div>
-                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', pt: 3 }}>
-                            <Button type="submit" variant="contained" disabled={formik.isSubmitting}>{formik.isSubmitting ? 'Menyimpan...' : 'Simpan Perubahan'}</Button>
-                        </Box>
                     </Stack>
                 </form>
             </Paper>

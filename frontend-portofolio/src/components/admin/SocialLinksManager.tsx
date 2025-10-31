@@ -1,9 +1,11 @@
-import { useState, useEffect, FormEvent } from 'react'
+import { useState, useEffect, MouseEvent } from 'react'
 import { Social } from '../../types'
 
 interface SocialLinksManagerProps {
     links: Social[]
     onUpdate: (links: Social[]) => void
+    onSubmit: () => void;
+    isSubmitting: boolean;
 }
 
 const socialPlatforms = [
@@ -17,38 +19,28 @@ const socialPlatforms = [
     { name: 'Email', icon: 'mail', placeholder: 'your@email.com' },
 ]
 
-export default function SocialLinksManager({ links, onUpdate }: SocialLinksManagerProps) {
+export default function SocialLinksManager({ links, onUpdate, onSubmit, isSubmitting }: SocialLinksManagerProps) {
     const [socialLinks, setSocialLinks] = useState<Social[]>(links)
-    const [loading, setLoading] = useState(false)
 
     useEffect(() => {
         setSocialLinks(links);
     }, [links]);
 
     const handleChange = (name: string, url: string) => {
-        setSocialLinks((prev) => {
-            const newLinks = [...prev];
-            const existingIndex = newLinks.findIndex((link) => link.name === name);
-            if (existingIndex > -1) {
-                newLinks[existingIndex] = { ...newLinks[existingIndex], url: url };
-            } else {
-                const platform = socialPlatforms.find(p => p.name === name);
-                newLinks.push({ name, url, id: 0, icon: platform?.icon || '', active: url.length > 0 });
-            }
-            return newLinks.map(link => ({ ...link, active: link.url.length > 0 }));
-        });
+        const newLinks = [...socialLinks];
+        const existingIndex = newLinks.findIndex((link) => link.name === name);
+        if (existingIndex > -1) {
+            newLinks[existingIndex] = { ...newLinks[existingIndex], url: url, active: url.length > 0 };
+        } else {
+            const platform = socialPlatforms.find(p => p.name === name);
+            newLinks.push({ name, url, id: 0, icon: platform?.icon || '', active: url.length > 0 });
+        }
+        onUpdate(newLinks);
     }
 
-    const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    const handleSubmit = (e: MouseEvent<HTMLButtonElement>) => {
         e.preventDefault()
-        setLoading(true)
-        try {
-            await onUpdate(socialLinks)
-        } catch (error) {
-            console.error('Error updating social links:', error)
-        } finally {
-            setLoading(false)
-        }
+        onSubmit()
     }
 
     const getLinkValue = (name: string): string => {
@@ -56,7 +48,7 @@ export default function SocialLinksManager({ links, onUpdate }: SocialLinksManag
     }
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="space-y-6">
             <div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                     Social Media Links
@@ -85,13 +77,14 @@ export default function SocialLinksManager({ links, onUpdate }: SocialLinksManag
 
             <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
                 <button
-                    type="submit"
-                    disabled={loading}
+                    type="button"
+                    onClick={handleSubmit}
+                    disabled={isSubmitting}
                     className="px-6 py-3 rounded-lg bg-primary-600 hover:bg-primary-700 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    {loading ? 'Saving...' : 'Save Changes'}
+                    {isSubmitting ? 'Saving...' : 'Save Changes'}
                 </button>
             </div>
-        </form>
+        </div>
     )
 }

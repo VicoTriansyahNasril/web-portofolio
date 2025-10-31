@@ -1,4 +1,4 @@
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Stack, MenuItem, Grid, Typography } from '@mui/material'
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Stack, MenuItem, Typography, Box } from '@mui/material'
 import { useFormik } from 'formik'
 import * as Yup from 'yup'
 import { useEffect } from 'react'
@@ -21,44 +21,23 @@ const validationSchema = Yup.object({
 })
 
 const MONTHS = [
-    { value: 0, label: 'Januari' },
-    { value: 1, label: 'Februari' },
-    { value: 2, label: 'Maret' },
-    { value: 3, label: 'April' },
-    { value: 4, label: 'Mei' },
-    { value: 5, label: 'Juni' },
-    { value: 6, label: 'Juli' },
-    { value: 7, label: 'Agustus' },
-    { value: 8, label: 'September' },
-    { value: 9, label: 'Oktober' },
-    { value: 10, label: 'November' },
-    { value: 11, label: 'Desember' },
+    { value: 0, label: 'Januari' }, { value: 1, label: 'Februari' }, { value: 2, label: 'Maret' },
+    { value: 3, label: 'April' }, { value: 4, label: 'Mei' }, { value: 5, label: 'Juni' },
+    { value: 6, label: 'Juli' }, { value: 7, label: 'Agustus' }, { value: 8, label: 'September' },
+    { value: 9, label: 'Oktober' }, { value: 10, label: 'November' }, { value: 11, label: 'Desember' },
 ]
 
 interface FormValues {
-    type: string
-    title: string
-    entity_name: string
-    location: string
-    description: string
-    start_month: number | string
-    start_year: number | string
-    end_month: number | string
-    end_year: number | string
+    type: string; title: string; entity_name: string; location: string; description: string;
+    start_month: number | string; start_year: number | string;
+    end_month: number | string; end_year: number | string;
 }
 
 export default function ExperienceFormModal({ open, onClose, onSubmit, initialData }: ExperienceFormModalProps) {
     const formik = useFormik<FormValues>({
         initialValues: {
-            type: 'Magang',
-            title: '',
-            entity_name: '',
-            location: '',
-            description: '',
-            start_month: '',
-            start_year: '',
-            end_month: '',
-            end_year: '',
+            type: 'Magang', title: '', entity_name: '', location: '', description: '',
+            start_month: '', start_year: '', end_month: '', end_year: '',
         },
         validationSchema,
         onSubmit: (values) => {
@@ -68,15 +47,11 @@ export default function ExperienceFormModal({ open, onClose, onSubmit, initialDa
                 : null
 
             const payload: Partial<Omit<Experience, 'id' | 'created_at' | 'updated_at'>> = {
-                type: values.type,
-                title: values.title,
-                entity_name: values.entity_name,
-                location: values.location,
-                description: values.description,
+                type: values.type, title: values.title, entity_name: values.entity_name,
+                location: values.location, description: values.description,
                 start_date: startDate.toISOString(),
                 end_date: endDate ? endDate.toISOString() : null,
             }
-
             onSubmit(payload)
         },
     })
@@ -87,7 +62,6 @@ export default function ExperienceFormModal({ open, onClose, onSubmit, initialDa
             if (initialData) {
                 const startDate = initialData.start_date ? new Date(initialData.start_date) : null
                 const endDate = initialData.end_date ? new Date(initialData.end_date) : null
-
                 formik.setValues({
                     type: initialData.type || 'Magang',
                     title: initialData.title || '',
@@ -111,125 +85,38 @@ export default function ExperienceFormModal({ open, onClose, onSubmit, initialDa
                 </DialogTitle>
                 <DialogContent>
                     <Stack spacing={2} sx={{ pt: 1 }}>
-                        <TextField
-                            select
-                            label="Tipe"
-                            value={formik.values.type}
-                            onChange={(e) => formik.setFieldValue('type', e.target.value)}
-                            fullWidth
-                        >
+                        <TextField select label="Tipe" name="type" value={formik.values.type} onChange={formik.handleChange} fullWidth>
                             <MenuItem value="Pekerjaan Penuh Waktu">Pekerjaan Penuh Waktu</MenuItem>
                             <MenuItem value="Magang">Magang</MenuItem>
                             <MenuItem value="Organisasi">Organisasi</MenuItem>
                             <MenuItem value="Pendidikan">Pendidikan</MenuItem>
                         </TextField>
 
-                        <TextField
-                            label="Judul / Posisi"
-                            value={formik.values.title}
-                            onChange={(e) => formik.setFieldValue('title', e.target.value)}
-                            onBlur={formik.handleBlur('title')}
-                            error={formik.touched.title && Boolean(formik.errors.title)}
-                            helperText={formik.touched.title && formik.errors.title}
-                            fullWidth
-                        />
+                        <TextField label="Judul / Posisi" name="title" value={formik.values.title} onChange={formik.handleChange} onBlur={formik.handleBlur} error={formik.touched.title && Boolean(formik.errors.title)} helperText={formik.touched.title && formik.errors.title} fullWidth />
+                        <TextField label="Nama Perusahaan / Kampus / Organisasi" name="entity_name" value={formik.values.entity_name} onChange={formik.handleChange} onBlur={formik.handleBlur} error={formik.touched.entity_name && Boolean(formik.errors.entity_name)} helperText={formik.touched.entity_name && formik.errors.entity_name} fullWidth />
+                        <TextField label="Lokasi (opsional)" name="location" value={formik.values.location} onChange={formik.handleChange} fullWidth />
+                        <TextField label="Deskripsi (opsional)" name="description" multiline rows={4} value={formik.values.description} onChange={formik.handleChange} fullWidth />
 
-                        <TextField
-                            label="Nama Perusahaan / Kampus / Organisasi"
-                            value={formik.values.entity_name}
-                            onChange={(e) => formik.setFieldValue('entity_name', e.target.value)}
-                            onBlur={formik.handleBlur('entity_name')}
-                            error={formik.touched.entity_name && Boolean(formik.errors.entity_name)}
-                            helperText={formik.touched.entity_name && formik.errors.entity_name}
-                            fullWidth
-                        />
+                        <Typography variant="subtitle2" color="text.secondary">Tanggal Mulai</Typography>
+                        <Box className="flex space-x-4">
+                            <TextField select label="Bulan" name="start_month" value={formik.values.start_month} onChange={formik.handleChange} onBlur={formik.handleBlur} error={formik.touched.start_month && Boolean(formik.errors.start_month)} fullWidth>
+                                {MONTHS.map(m => (<MenuItem key={m.value} value={m.value}>{m.label}</MenuItem>))}
+                            </TextField>
+                            <TextField type="number" label="Tahun" name="start_year" value={formik.values.start_year} onChange={formik.handleChange} onBlur={formik.handleBlur} error={formik.touched.start_year && Boolean(formik.errors.start_year)} fullWidth />
+                        </Box>
 
-                        <TextField
-                            label="Lokasi (opsional)"
-                            value={formik.values.location}
-                            onChange={(e) => formik.setFieldValue('location', e.target.value)}
-                            fullWidth
-                        />
-
-                        <TextField
-                            label="Deskripsi (opsional)"
-                            multiline
-                            rows={4}
-                            value={formik.values.description}
-                            onChange={(e) => formik.setFieldValue('description', e.target.value)}
-                            fullWidth
-                        />
-
-                        <Typography variant="subtitle2" color="text.secondary">
-                            Tanggal Mulai
-                        </Typography>
-                        <Grid container spacing={2}>
-                            <Grid size={{ xs: 6 }}>
-                                <TextField
-                                    select
-                                    label="Bulan"
-                                    value={formik.values.start_month}
-                                    onChange={(e) => formik.setFieldValue('start_month', e.target.value)}
-                                    onBlur={formik.handleBlur('start_month')}
-                                    error={formik.touched.start_month && Boolean(formik.errors.start_month)}
-                                    fullWidth
-                                >
-                                    {MONTHS.map(m => (
-                                        <MenuItem key={m.value} value={m.value}>
-                                            {m.label}
-                                        </MenuItem>
-                                    ))}
-                                </TextField>
-                            </Grid>
-                            <Grid size={{ xs: 6 }}>
-                                <TextField
-                                    type="number"
-                                    label="Tahun"
-                                    value={formik.values.start_year}
-                                    onChange={(e) => formik.setFieldValue('start_year', e.target.value)}
-                                    onBlur={formik.handleBlur('start_year')}
-                                    error={formik.touched.start_year && Boolean(formik.errors.start_year)}
-                                    fullWidth
-                                />
-                            </Grid>
-                        </Grid>
-
-                        <Typography variant="subtitle2" color="text.secondary">
-                            Tanggal Selesai (kosongkan jika masih berjalan)
-                        </Typography>
-                        <Grid container spacing={2}>
-                            <Grid size={{ xs: 6 }}>
-                                <TextField
-                                    select
-                                    label="Bulan"
-                                    value={formik.values.end_month}
-                                    onChange={(e) => formik.setFieldValue('end_month', e.target.value)}
-                                    fullWidth
-                                >
-                                    {MONTHS.map(m => (
-                                        <MenuItem key={m.value} value={m.value}>
-                                            {m.label}
-                                        </MenuItem>
-                                    ))}
-                                </TextField>
-                            </Grid>
-                            <Grid size={{ xs: 6 }}>
-                                <TextField
-                                    type="number"
-                                    label="Tahun"
-                                    value={formik.values.end_year}
-                                    onChange={(e) => formik.setFieldValue('end_year', e.target.value)}
-                                    fullWidth
-                                />
-                            </Grid>
-                        </Grid>
+                        <Typography variant="subtitle2" color="text.secondary">Tanggal Selesai (kosongkan jika masih berjalan)</Typography>
+                        <Box className="flex space-x-4">
+                            <TextField select label="Bulan" name="end_month" value={formik.values.end_month} onChange={formik.handleChange} fullWidth>
+                                {MONTHS.map(m => (<MenuItem key={m.value} value={m.value}>{m.label}</MenuItem>))}
+                            </TextField>
+                            <TextField type="number" label="Tahun" name="end_year" value={formik.values.end_year} onChange={formik.handleChange} fullWidth />
+                        </Box>
                     </Stack>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={onClose}>Batal</Button>
-                    <Button type="submit" variant="contained" disabled={formik.isSubmitting}>
-                        Simpan
-                    </Button>
+                    <Button type="submit" variant="contained" disabled={formik.isSubmitting}>Simpan</Button>
                 </DialogActions>
             </form>
         </Dialog>

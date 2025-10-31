@@ -1,5 +1,5 @@
-import { useEffect, useState, useMemo } from 'react';
-import { Box, CircularProgress, Typography, Paper, Divider, Container, Link } from '@mui/material';
+import { useEffect, useState, useMemo, ReactNode } from 'react';
+import { Box, CircularProgress, Typography, Paper, Divider, Container, Stack, Link, Button } from '@mui/material';
 import { fetchPublicProfile } from '@/api/profile';
 import { fetchPublicSkills } from '@/api/skills';
 import { fetchPublicExperiences } from '@/api/experiences';
@@ -7,57 +7,86 @@ import { fetchPublicAchievements } from '@/api/achievements';
 import ProfileHeader from '@/components/public/ProfileHeader';
 import SkillChips from '@/components/public/SkillChips';
 import ExperienceTimeline from '@/components/public/ExperienceTimeline';
-import { motion } from 'framer-motion';
+import { motion, Variants } from 'framer-motion';
 import type { Profile, Skill, Experience, Achievement } from '@/types';
 
-const containerVariants = {
+import CodeIcon from '@mui/icons-material/Code';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import LaunchIcon from '@mui/icons-material/Launch';
+
+const containerVariants: Variants = {
     hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.15 } },
+    visible: { opacity: 1, transition: { staggerChildren: 0.15, delayChildren: 0.2 } },
 };
 
-const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: { y: 0, opacity: 1 },
+const itemVariants: Variants = {
+    hidden: { y: 30, opacity: 0 },
+    visible: { y: 0, opacity: 1, transition: { type: 'spring' as const, stiffness: 100 } },
 };
 
-interface SectionProps {
-    title: string;
-    children: React.ReactNode;
+function Section({ title, icon, children }: { title: string; icon: ReactNode; children: ReactNode }) {
+    return (
+        <motion.section variants={itemVariants} className="mb-16">
+            <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 4 }}>
+                <Box sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 48,
+                    height: 48,
+                    borderRadius: '50%',
+                    background: (t) => `linear-gradient(135deg, ${t.palette.primary.main} 0%, ${t.palette.secondary.main} 100%)`,
+                    color: 'white',
+                    boxShadow: (t) => `0 4px 20px ${t.palette.primary.main}40`,
+                }}>
+                    {icon}
+                </Box>
+                <Typography variant="h4" fontWeight={800}>
+                    {title}
+                </Typography>
+            </Stack>
+            {children}
+        </motion.section>
+    );
 }
 
-function Section({ title, children }: SectionProps) {
+function AchievementCard({ item }: { item: Achievement }) {
     return (
-        <Box
-            component={motion.div}
-            variants={itemVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.2 }}
-            sx={{ mt: 6 }}
+        <Paper
+            sx={{
+                p: 3,
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                '&:hover': {
+                    transform: 'translateY(-5px)',
+                    boxShadow: 6,
+                }
+            }}
         >
-            <Typography
-                variant="h4"
-                fontWeight={800}
-                sx={{
-                    fontSize: { xs: '1.75rem', md: '2.125rem' },
-                    mb: 3,
-                    position: 'relative',
-                    display: 'inline-block',
-                    '&::after': {
-                        content: '""',
-                        position: 'absolute',
-                        bottom: -4,
-                        left: 0,
-                        width: '50%',
-                        height: '3px',
-                        bgcolor: 'primary.main',
-                    },
-                }}
-            >
-                {title}
-            </Typography>
-            {children}
-        </Box>
+            <Box sx={{ flexGrow: 1 }}>
+                <Typography variant="h6" fontWeight={700}>{item.title}</Typography>
+                <Typography variant="body1" color="text.secondary" sx={{ mt: 0.5 }}>{item.issuer}</Typography>
+                <Typography variant="caption" color="text.secondary">{new Date(item.date).getFullYear()}</Typography>
+                {item.description && (
+                    <Typography variant="body2" sx={{ mt: 2, whiteSpace: 'pre-wrap', color: 'text.secondary' }}>
+                        {item.description}
+                    </Typography>
+                )}
+            </Box>
+            {item.credential_url && (
+                <Button
+                    component={Link}
+                    href={item.credential_url}
+                    target="_blank"
+                    endIcon={<LaunchIcon />}
+                    sx={{ mt: 2, alignSelf: 'flex-start' }}
+                >
+                    {item.link_text || 'Lihat Kredensial'}
+                </Button>
+            )}
+        </Paper>
     );
 }
 
@@ -88,13 +117,6 @@ export default function About() {
         fetchData();
     }, []);
 
-    const { workExperiences, orgExperiences, educationExperiences } = useMemo(() => {
-        const work = experiences.filter((e) => e.type === 'Pekerjaan Penuh Waktu' || e.type === 'Magang');
-        const org = experiences.filter((e) => e.type === 'Organisasi');
-        const edu = experiences.filter((e) => e.type === 'Pendidikan');
-        return { workExperiences: work, orgExperiences: org, educationExperiences: edu };
-    }, [experiences]);
-
     const skillGroupOrder = useMemo(() => {
         try {
             return JSON.parse(profile?.skill_group_order || '[]') as string[];
@@ -106,79 +128,61 @@ export default function About() {
     if (loading) {
         return (
             <Box sx={{ display: 'grid', placeItems: 'center', minHeight: '80vh' }}>
-                <CircularProgress />
+                <CircularProgress size={50} />
             </Box>
         );
     }
 
     return (
-        <Container>
+        <Container sx={{ py: 4 }}>
             <motion.div variants={containerVariants} initial="hidden" animate="visible">
                 <motion.div variants={itemVariants}>
                     <ProfileHeader profile={profile} />
                 </motion.div>
 
-                {profile?.bio && (
-                    <Section title="Tentang Saya">
-                        <Paper sx={{ p: { xs: 2, md: 4 } }}>
-                            <Typography
-                                color="text.secondary"
-                                sx={{
-                                    whiteSpace: 'pre-wrap',
-                                    lineHeight: 1.7,
-                                    fontSize: '1.1rem',
-                                }}
-                            >
-                                {profile.bio}
-                            </Typography>
-                        </Paper>
-                    </Section>
-                )}
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-16 mt-8 md:mt-12">
+                    <motion.div variants={itemVariants} className="md:col-span-7">
+                        <Typography variant="h4" fontWeight={800} sx={{ mb: 2 }}>
+                            Tentang Saya
+                        </Typography>
+                        <Typography
+                            color="text.secondary"
+                            sx={{
+                                whiteSpace: 'pre-wrap',
+                                lineHeight: 1.8,
+                                fontSize: '1.1rem',
+                            }}
+                        >
+                            {profile?.bio}
+                        </Typography>
+                    </motion.div>
+                    <motion.div variants={itemVariants} className="md:col-span-5">
+                        <Typography variant="h4" fontWeight={800} sx={{ mb: 2 }}>
+                            Perjalanan Karir
+                        </Typography>
+                        <ExperienceTimeline experiences={experiences} />
+                    </motion.div>
+                </div>
 
-                {workExperiences.length > 0 && (
-                    <Section title="Pengalaman Kerja">
-                        <ExperienceTimeline experiences={workExperiences} />
-                    </Section>
-                )}
-
-                {orgExperiences.length > 0 && (
-                    <Section title="Organisasi & Kepemimpinan">
-                        <ExperienceTimeline experiences={orgExperiences} />
-                    </Section>
-                )}
-
-                {educationExperiences.length > 0 && (
-                    <Section title="Pendidikan">
-                        <ExperienceTimeline experiences={educationExperiences} />
-                    </Section>
-                )}
+                <Divider sx={{ my: 8, opacity: 0.5 }} />
 
                 {skills.length > 0 && (
-                    <Section title="Keahlian & Teknologi">
-                        <Paper sx={{ p: { xs: 2, md: 4 } }}>
+                    <Section title="Keahlian & Teknologi" icon={<CodeIcon />}>
+                        <Paper sx={{ p: { xs: 3, md: 4 } }}>
                             <SkillChips skills={skills} groupOrder={skillGroupOrder} />
                         </Paper>
                     </Section>
                 )}
 
                 {achievements.length > 0 && (
-                    <Section title="Pencapaian & Sertifikasi">
-                        <Paper sx={{ p: { xs: 2, md: 4 } }}>
-                            {achievements.map((item, index) => (
-                                <Box key={item.id} sx={{ mb: index === achievements.length - 1 ? 0 : 2 }}>
-                                    <Typography fontWeight={700}>{item.title}</Typography>
-                                    <Typography variant="body2" color="text.secondary">
-                                        {item.issuer} - {new Date(item.date).getFullYear()}
-                                    </Typography>
-                                    {item.credential_url && (
-                                        <Link href={item.credential_url} target="_blank" variant="caption">
-                                            {item.link_text || 'Lihat Kredensial'}
-                                        </Link>
-                                    )}
-                                    {index !== achievements.length - 1 && <Divider sx={{ my: 2 }} />}
-                                </Box>
+                    <Section title="Pencapaian & Sertifikasi" icon={<EmojiEventsIcon />}>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            {achievements.map((item) => (
+                                <motion.div key={item.id} variants={itemVariants}>
+                                    <AchievementCard item={item} />
+                                </motion.div>
                             ))}
-                        </Paper>
+                        </div>
                     </Section>
                 )}
             </motion.div>
