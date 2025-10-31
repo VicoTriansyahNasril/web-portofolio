@@ -15,11 +15,13 @@ services:
       interval: 5s
       timeout: 3s
       retries: 20
+      start_period: 10s
     networks: [ appnet ]
 
   backend:
     build: ./backend-portofolio
     container_name: portfolio_backend
+    restart: on-failure
     depends_on:
       db:
         condition: service_healthy

@@ -20,14 +20,14 @@ func createVisitorHash(ip string, userAgent string) string {
 	rawIdentifier := fmt.Sprintf("%s-%s-%s", ip, userAgent, salt)
 	hasher := sha256.New()
 	hasher.Write([]byte(rawIdentifier))
-	return base64.StdEncoding.EncodeToString(hasher.Sum(nil))
+	return base64.URLEncoding.EncodeToString(hasher.Sum(nil))
 }
 
-// POST /api/track
 func TrackVisit() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		type TrackRequest struct {
-			Path string `json:"path"`
+			Path      string `json:"path"`
+			VisitorID string `json:"visitorId"`
 		}
 		var request TrackRequest
 		if err := c.ShouldBindJSON(&request); err != nil {
@@ -35,9 +35,16 @@ func TrackVisit() gin.HandlerFunc {
 			return
 		}
 
+		var visitorHash string
+		if request.VisitorID != "" {
+			visitorHash = request.VisitorID
+		} else {
+			visitorHash = createVisitorHash(c.ClientIP(), c.GetHeader("User-Agent"))
+		}
+
 		visit := models.PageVisit{
 			Path:        request.Path,
-			VisitorHash: createVisitorHash(c.ClientIP(), c.GetHeader("User-Agent")),
+			VisitorHash: visitorHash,
 			Timestamp:   time.Now(),
 		}
 		if err := db.Conn.Create(&visit).Error; err != nil {
@@ -48,7 +55,6 @@ func TrackVisit() gin.HandlerFunc {
 	}
 }
 
-// GET /api/analytics/visitors
 func GetVisitorsSummary() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		type RawSummary struct {
@@ -94,7 +100,6 @@ func GetVisitorsSummary() gin.HandlerFunc {
 	}
 }
 
-// GET /api/analytics/visitors/:visitorHash
 func GetVisitorDetail() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		visitorHash := c.Param("visitorHash")
