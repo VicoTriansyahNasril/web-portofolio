@@ -1,8 +1,7 @@
-// src/pages/Home.tsx - FIXED VERSION
 import { useEffect, useState, useMemo } from 'react';
 import { Box, Stack, Typography, Paper, Chip, IconButton, Button, CircularProgress, Container } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
-import { motion, Variants } from 'framer-motion';
+import { motion as Motion, Variants } from 'framer-motion';
 import { fetchPublicProfile } from '../api/profile';
 import { fetchPublicSkills } from '../api/skills';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
@@ -61,7 +60,7 @@ export default function Home() {
 
     return (
         <Container
-            component={motion.div}
+            component={Motion.div}
             variants={containerVariants}
             initial="hidden"
             animate="visible"
@@ -71,23 +70,11 @@ export default function Home() {
                 flexDirection: 'column',
                 justifyContent: 'space-between',
                 py: 4,
-                // ✅ CRITICAL FIX: Tidak ada pointerEvents di sini
-                // Biarkan default agar container tidak menghalangi mouse events ke background 3D
+                pointerEvents: 'none',
             }}
         >
-            {/* Bagian Hero/Profile - HARUS pakai pointerEvents: 'none' agar tidak menghalangi 3D */}
-            <motion.div variants={itemVariants}>
-                <Box
-                    sx={{
-                        maxWidth: 500,
-                        // ✅ Container text tidak menghalangi drag 3D
-                        pointerEvents: 'none',
-                        // ✅ Tapi child elements yang interaktif bisa diklik
-                        '& > *': {
-                            pointerEvents: 'auto'
-                        }
-                    }}
-                >
+            <Motion.div variants={itemVariants} style={{ pointerEvents: 'auto' }}>
+                <Box sx={{ maxWidth: 500 }}>
                     <Typography variant="h5" color="primary.main" fontWeight={600}>
                         Hi, my name is
                     </Typography>
@@ -123,9 +110,8 @@ export default function Home() {
                         )}
                     </Stack>
                 </Box>
-            </motion.div>
+            </Motion.div>
 
-            {/* Bagian Cards - HARUS pakai pointerEvents: 'none' agar tidak menghalangi 3D */}
             <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <Stack
                     spacing={3}
@@ -133,21 +119,15 @@ export default function Home() {
                         alignItems: 'flex-end',
                         maxWidth: 450,
                         width: '100%',
-                        // ✅ Stack tidak menghalangi drag 3D
                         pointerEvents: 'none',
-                        // ✅ Tapi child elements (Paper) bisa diklik
-                        '& > *': {
-                            pointerEvents: 'auto'
-                        }
                     }}
                 >
-                    <motion.div variants={itemVariants} style={{ width: '100%' }}>
+                    <Motion.div variants={itemVariants} style={{ width: '100%', pointerEvents: 'auto' }}>
                         <Paper
                             sx={{
                                 p: { xs: 2, md: 3 },
                                 backdropFilter: 'blur(10px)',
                                 backgroundColor: 'rgba(17, 22, 42, 0.6)',
-                                pointerEvents: 'auto' // ✅ Paper bisa diklik
                             }}
                         >
                             <Typography variant="h5" fontWeight={700} mb={2}>
@@ -171,16 +151,15 @@ export default function Home() {
                                 Lihat Semua Keahlian
                             </Button>
                         </Paper>
-                    </motion.div>
+                    </Motion.div>
 
-                    <motion.div variants={itemVariants} style={{ width: '100%' }}>
+                    <Motion.div variants={itemVariants} style={{ width: '100%', pointerEvents: 'auto' }}>
                         <Paper
                             sx={{
                                 p: { xs: 2, md: 3 },
                                 textAlign: 'center',
                                 backdropFilter: 'blur(10px)',
                                 backgroundColor: 'rgba(17, 22, 42, 0.6)',
-                                pointerEvents: 'auto' // ✅ Paper bisa diklik
                             }}
                         >
                             <Typography variant="h5" fontWeight={700}>
@@ -198,7 +177,7 @@ export default function Home() {
                                 Semua Proyek
                             </Button>
                         </Paper>
-                    </motion.div>
+                    </Motion.div>
                 </Stack>
             </Box>
         </Container>

@@ -43,10 +43,10 @@ function PageLayout({ children }: { children: ReactNode }) {
   );
 }
 
-function PublicLayout({ children, mode, toggleMode }: { 
-  children: ReactNode; 
-  mode: 'light' | 'dark'; 
-  toggleMode: () => void 
+function PublicLayout({ children, mode, toggleMode }: {
+  children: ReactNode;
+  mode: 'light' | 'dark';
+  toggleMode: () => void
 }) {
   const location = useLocation();
   const isHomePage = location.pathname === '/';
