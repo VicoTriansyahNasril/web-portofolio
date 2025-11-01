@@ -1,34 +1,39 @@
+// portofolio/backend-portofolio/internal/server/router.go
 package server
 
 import (
+	"time"
+
 	"backend-portofolio/internal/config"
 	"backend-portofolio/internal/handlers"
 	"backend-portofolio/internal/middleware"
 
+	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 )
 
 func SetupRouter(cfg *config.Config) *gin.Engine {
 	r := gin.Default()
 	r.Use(middleware.CORSMiddleware(cfg.CORSOrigins))
+	r.Use(gzip.Gzip(gzip.DefaultCompression))
 
 	r.Static("/uploads", cfg.UploadDir)
 
-	// Rute Publik
-	r.GET("/api/projects", handlers.ListPublicProjects())
-	r.GET("/api/projects/:slug", handlers.GetProjectBySlug())
-	r.GET("/api/profile", handlers.GetProfilePublic())
-	r.HEAD("/api/profile", handlers.GetProfilePublic())
-	r.GET("/api/skills", handlers.GetSkillsPublic())
-	r.GET("/api/experiences", handlers.ListPublicExperiences())
-	r.GET("/api/achievements", handlers.ListPublicAchievements())
+	publicAPI := r.Group("/api")
+	publicAPI.Use(middleware.CacheControl(5 * time.Minute))
+	{
+		publicAPI.GET("/projects", handlers.ListPublicProjects())
+		publicAPI.GET("/projects/:slug", handlers.GetProjectBySlug())
+		publicAPI.GET("/profile", handlers.GetProfilePublic())
+		publicAPI.HEAD("/profile", handlers.GetProfilePublic())
+		publicAPI.GET("/skills", handlers.GetSkillsPublic())
+		publicAPI.GET("/experiences", handlers.ListPublicExperiences())
+		publicAPI.GET("/achievements", handlers.ListPublicAchievements())
+	}
+
 	r.POST("/api/track", handlers.TrackVisit())
+	r.POST("/api/auth/login", handlers.LoginHandler(cfg.JWTSecret, cfg.AdminEmail, cfg.AdminPassword))
 
-	// Rute Auth
-	r.POST("/api/auth/login",
-		handlers.LoginHandler(cfg.JWTSecret, cfg.AdminEmail, cfg.AdminPassword))
-
-	// Rute Admin
 	admin := r.Group("/api/admin", middleware.JWTAuth(cfg.JWTSecret))
 	{
 		admin.GET("/projects", handlers.AdminListProjects())

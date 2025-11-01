@@ -1,52 +1,50 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useParams, useLocation, Link as RouterLink } from 'react-router-dom'
-import { Container, Typography, Box, CircularProgress, Paper, Stack, Chip, Button, Link, Divider } from '@mui/material'
-import OpenInNewIcon from '@mui/icons-material/OpenInNew'
-import GitHubIcon from '@mui/icons-material/GitHub'
-import ArrowBackIcon from '@mui/icons-material/ArrowBack'
-import { motion } from 'framer-motion'
-import { fetchPublicProjectBySlug } from '../api/projects'
-import Lightbox from '../components/public/Lightbox'
-import { fileUrl } from '../utils/url'
-import ProjectBody from '../components/public/ProjectBody'
-import { Project } from '../types'
+import { useMemo, useState, useEffect } from 'react';
+import { useParams, useLocation, Link as RouterLink } from 'react-router-dom';
+import { Container, Typography, Box, CircularProgress, Paper, Stack, Chip, Button, Link, Divider } from '@mui/material';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import GitHubIcon from '@mui/icons-material/GitHub';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { motion } from 'framer-motion';
+import Lightbox from '../components/public/Lightbox';
+import { fileUrl } from '../utils/url';
+import ProjectBody from '../components/public/ProjectBody';
+import { usePublicData } from '@/hooks/usePublicData';
+import { Project } from '../types';
 
 export default function ProjectDetail() {
     const { slug } = useParams<{ slug: string }>();
     const location = useLocation();
 
-    const [data, setData] = useState<Project | null>(location.state?.project || null);
-    const [loading, setLoading] = useState(!location.state?.project);
+    const initialData = location.state?.project as Project | undefined;
+    const { data: projectData, isLoading } = usePublicData<Project>(slug ? `/api/projects/${slug}` : null);
+
+    const data = projectData || initialData;
 
     const [open, setOpen] = useState(false);
     const [index, setIndex] = useState(0);
 
     useEffect(() => {
-        const fetchData = async () => {
-            if (!slug) return;
-            try {
-                const fullData = await fetchPublicProjectBySlug(slug);
-                setData(fullData);
-            } catch (err) {
-                console.error("Failed to fetch project", err);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        if (!data || !data.body) {
-            fetchData();
-        }
         window.scrollTo(0, 0);
-    }, [slug, data]);
+    }, [slug]);
 
     const gallery = useMemo(() => (Array.isArray(data?.gallery) ? data.gallery : []), [data]);
     const techStack = useMemo(() => {
         return data?.tech_stack ? data.tech_stack.split(',').map(s => s.trim()).filter(Boolean) : [];
     }, [data]);
 
-    if (loading || !data) {
+    if (isLoading && !initialData) {
         return <Box sx={{ display: 'grid', placeItems: 'center', minHeight: '80vh' }}><CircularProgress /></Box>;
+    }
+
+    if (!data) {
+        return (
+            <Container sx={{ py: 4, textAlign: 'center' }}>
+                <Typography variant="h5">Proyek tidak ditemukan.</Typography>
+                <Button component={RouterLink} to="/projects" sx={{ mt: 2 }}>
+                    Kembali ke Semua Proyek
+                </Button>
+            </Container>
+        );
     }
 
     return (

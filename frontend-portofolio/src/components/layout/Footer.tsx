@@ -1,36 +1,24 @@
-import { useEffect, useState, useMemo } from 'react'
-import { Box, Container, Typography, Stack, Link } from '@mui/material'
-import { fetchPublicProfile } from '../../api/profile'
-import type { Profile, Social } from '../../types'
+import { useMemo } from 'react';
+import { Box, Container, Typography, Stack, Link } from '@mui/material';
+import { usePublicData } from '@/hooks/usePublicData';
+import type { Profile, Social } from '../../types';
 
 interface SocialLinks {
-    github: Social | null
-    linkedin: Social | null
+    github: Social | null;
+    linkedin: Social | null;
 }
 
 export default function Footer() {
-    const [profile, setProfile] = useState < Profile | null > (null)
-
-    useEffect(() => {
-        const loadProfile = async () => {
-            try {
-                const data = await fetchPublicProfile()
-                setProfile(data)
-            } catch (error) {
-                console.error('Failed to fetch profile for footer:', error)
-            }
-        }
-        loadProfile()
-    }, [])
+    const { data: profile } = usePublicData<Profile>('/api/profile');
 
     const socialLinks = useMemo((): SocialLinks => {
         if (!profile?.socials) {
-            return { github: null, linkedin: null }
+            return { github: null, linkedin: null };
         }
-        const github = profile.socials.find(s => s.active && s.name.toLowerCase() === 'github') || null
-        const linkedin = profile.socials.find(s => s.active && s.name.toLowerCase() === 'linkedin') || null
-        return { github, linkedin }
-    }, [profile])
+        const github = profile.socials.find(s => s.active && s.name.toLowerCase() === 'github') || null;
+        const linkedin = profile.socials.find(s => s.active && s.name.toLowerCase() === 'linkedin') || null;
+        return { github, linkedin };
+    }, [profile]);
 
     return (
         <Box className="app-footer" component="footer" sx={{ py: 3, mt: 'auto' }}>
@@ -66,5 +54,5 @@ export default function Footer() {
                 </Stack>
             </Container>
         </Box>
-    )
+    );
 }
