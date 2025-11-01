@@ -1,191 +1,327 @@
-import { useEffect, useState, useMemo, ReactNode } from 'react';
-import { Box, CircularProgress, Typography, Paper, Divider, Container, Stack, Link, Button } from '@mui/material';
-import { fetchPublicProfile } from '@/api/profile';
-import { fetchPublicSkills } from '@/api/skills';
-import { fetchPublicExperiences } from '@/api/experiences';
-import { fetchPublicAchievements } from '@/api/achievements';
-import ProfileHeader from '@/components/public/ProfileHeader';
-import SkillChips from '@/components/public/SkillChips';
-import ExperienceTimeline from '@/components/public/ExperienceTimeline';
-import { motion, Variants } from 'framer-motion';
-import type { Profile, Skill, Experience, Achievement } from '@/types';
+import { useEffect, useState } from 'react'
+import { Box, Typography, Paper, Stack, CircularProgress, Button } from '@mui/material'
+import { motion, Variants } from 'framer-motion'
+import OpenInNewIcon from '@mui/icons-material/OpenInNew'
+import { fetchPublicProfile } from '@/api/profile'
+import { fetchPublicSkills } from '@/api/skills'
+import { fetchPublicExperiences } from '@/api/experiences'
+import { fetchPublicAchievements } from '@/api/achievements'
+import ProfileHeader from '@/components/public/ProfileHeader'
+import ExperienceTimeline from '@/components/public/ExperienceTimeline'
+import SkillChips from '@/components/public/SkillChips'
+import type { Profile, Skill, Experience, Achievement } from '@/types'
 
-import CodeIcon from '@mui/icons-material/Code';
-import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
-import LaunchIcon from '@mui/icons-material/Launch';
+const sectionVariants: Variants = {
+    hidden: { opacity: 0, y: 30 },
+    visible: {
+        opacity: 1,
+        y: 0,
+        transition: {
+            duration: 0.6,
+            ease: 'easeOut' as const
+        }
+    }
+};
 
-const containerVariants: Variants = {
+const staggerContainer: Variants = {
     hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.15, delayChildren: 0.2 } },
+    visible: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.15
+        }
+    }
 };
-
-const itemVariants: Variants = {
-    hidden: { y: 30, opacity: 0 },
-    visible: { y: 0, opacity: 1, transition: { type: 'spring' as const, stiffness: 100 } },
-};
-
-function Section({ title, icon, children }: { title: string; icon: ReactNode; children: ReactNode }) {
-    return (
-        <motion.section variants={itemVariants} className="mb-16">
-            <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 4 }}>
-                <Box sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: 48,
-                    height: 48,
-                    borderRadius: '50%',
-                    background: (t) => `linear-gradient(135deg, ${t.palette.primary.main} 0%, ${t.palette.secondary.main} 100%)`,
-                    color: 'white',
-                    boxShadow: (t) => `0 4px 20px ${t.palette.primary.main}40`,
-                }}>
-                    {icon}
-                </Box>
-                <Typography variant="h4" fontWeight={800}>
-                    {title}
-                </Typography>
-            </Stack>
-            {children}
-        </motion.section>
-    );
-}
-
-function AchievementCard({ item }: { item: Achievement }) {
-    return (
-        <Paper
-            sx={{
-                p: 3,
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-                '&:hover': {
-                    transform: 'translateY(-5px)',
-                    boxShadow: 6,
-                }
-            }}
-        >
-            <Box sx={{ flexGrow: 1 }}>
-                <Typography variant="h6" fontWeight={700}>{item.title}</Typography>
-                <Typography variant="body1" color="text.secondary" sx={{ mt: 0.5 }}>{item.issuer}</Typography>
-                <Typography variant="caption" color="text.secondary">{new Date(item.date).getFullYear()}</Typography>
-                {item.description && (
-                    <Typography variant="body2" sx={{ mt: 2, whiteSpace: 'pre-wrap', color: 'text.secondary' }}>
-                        {item.description}
-                    </Typography>
-                )}
-            </Box>
-            {item.credential_url && (
-                <Button
-                    component={Link}
-                    href={item.credential_url}
-                    target="_blank"
-                    endIcon={<LaunchIcon />}
-                    sx={{ mt: 2, alignSelf: 'flex-start' }}
-                >
-                    {item.link_text || 'Lihat Kredensial'}
-                </Button>
-            )}
-        </Paper>
-    );
-}
 
 export default function About() {
-    const [profile, setProfile] = useState<Profile | null>(null);
-    const [skills, setSkills] = useState<Skill[]>([]);
-    const [experiences, setExperiences] = useState<Experience[]>([]);
-    const [achievements, setAchievements] = useState<Achievement[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [profile, setProfile] = useState<Profile | null>(null)
+    const [skills, setSkills] = useState<Skill[]>([])
+    const [experiences, setExperiences] = useState<Experience[]>([])
+    const [achievements, setAchievements] = useState<Achievement[]>([])
+    const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const [p, s, e, a] = await Promise.all([
-                    fetchPublicProfile(),
-                    fetchPublicSkills(),
-                    fetchPublicExperiences(),
-                    fetchPublicAchievements(),
-                ]);
-                setProfile(p);
-                setSkills(s);
-                setExperiences(e);
-                setAchievements(a);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchData();
-    }, []);
-
-    const skillGroupOrder = useMemo(() => {
-        try {
-            return JSON.parse(profile?.skill_group_order || '[]') as string[];
-        } catch {
-            return [];
-        }
-    }, [profile]);
+        Promise.all([
+            fetchPublicProfile(),
+            fetchPublicSkills(),
+            fetchPublicExperiences(),
+            fetchPublicAchievements(),
+        ])
+            .then(([p, sk, ex, ac]) => {
+                setProfile(p)
+                setSkills(sk)
+                setExperiences(ex)
+                setAchievements(ac)
+            })
+            .finally(() => setLoading(false))
+    }, [])
 
     if (loading) {
         return (
-            <Box sx={{ display: 'grid', placeItems: 'center', minHeight: '80vh' }}>
+            <Box sx={{ display: 'grid', placeItems: 'center', minHeight: '60vh' }}>
                 <CircularProgress size={50} />
             </Box>
-        );
+        )
     }
 
     return (
-        <Container sx={{ py: 4 }}>
-            <motion.div variants={containerVariants} initial="hidden" animate="visible">
-                <motion.div variants={itemVariants}>
-                    <ProfileHeader profile={profile} />
-                </motion.div>
+        <Box>
+            <motion.div
+                initial="hidden"
+                animate="visible"
+                variants={sectionVariants}
+            >
+                <ProfileHeader profile={profile} />
+            </motion.div>
 
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-16 mt-8 md:mt-12">
-                    <motion.div variants={itemVariants} className="md:col-span-7">
-                        <Typography variant="h4" fontWeight={800} sx={{ mb: 2 }}>
-                            Tentang Saya
-                        </Typography>
+            <motion.div
+                initial="hidden"
+                animate="visible"
+                variants={sectionVariants}
+                transition={{ delay: 0.2 }}
+            >
+                <Paper
+                    elevation={0}
+                    sx={{
+                        p: { xs: 3, md: 4 },
+                        mt: 4,
+                        borderRadius: 4,
+                        background: 'linear-gradient(135deg, rgba(124,58,237,0.03) 0%, rgba(6,182,212,0.03) 100%)',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                    }}
+                >
+                    <Typography
+                        variant="h5"
+                        fontWeight={800}
+                        mb={3}
+                        sx={{
+                            position: 'relative',
+                            display: 'inline-block',
+                            '&::after': {
+                                content: '""',
+                                position: 'absolute',
+                                bottom: -8,
+                                left: 0,
+                                width: '60%',
+                                height: 3,
+                                background: 'linear-gradient(90deg, #7C3AED, #06B6D4)',
+                                borderRadius: 2
+                            }
+                        }}
+                    >
+                        Tentang Saya
+                    </Typography>
+                    <Typography
+                        variant="body1"
+                        color="text.secondary"
+                        sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.8 }}
+                    >
+                        {profile?.bio}
+                    </Typography>
+                </Paper>
+            </motion.div>
+
+            {experiences.length > 0 && (
+                <motion.div
+                    variants={staggerContainer}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, amount: 0.2 }}
+                >
+                    <Box sx={{ mt: 5 }}>
+                        <motion.div variants={sectionVariants}>
+                            <Typography
+                                variant="h5"
+                                fontWeight={800}
+                                mb={4}
+                                sx={{
+                                    position: 'relative',
+                                    display: 'inline-block',
+                                    '&::after': {
+                                        content: '""',
+                                        position: 'absolute',
+                                        bottom: -8,
+                                        left: 0,
+                                        width: '60%',
+                                        height: 3,
+                                        background: 'linear-gradient(90deg, #7C3AED, #06B6D4)',
+                                        borderRadius: 2
+                                    }
+                                }}
+                            >
+                                Pengalaman
+                            </Typography>
+                        </motion.div>
+                        <ExperienceTimeline experiences={experiences} />
+                    </Box>
+                </motion.div>
+            )}
+
+            <motion.div
+                variants={staggerContainer}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.3 }}
+            >
+                <Box sx={{ mt: 5 }}>
+                    <motion.div variants={sectionVariants}>
                         <Typography
-                            color="text.secondary"
+                            variant="h5"
+                            fontWeight={800}
+                            mb={3}
                             sx={{
-                                whiteSpace: 'pre-wrap',
-                                lineHeight: 1.8,
-                                fontSize: '1.1rem',
+                                position: 'relative',
+                                display: 'inline-block',
+                                '&::after': {
+                                    content: '""',
+                                    position: 'absolute',
+                                    bottom: -8,
+                                    left: 0,
+                                    width: '60%',
+                                    height: 3,
+                                    background: 'linear-gradient(90deg, #7C3AED, #06B6D4)',
+                                    borderRadius: 2
+                                }
                             }}
                         >
-                            {profile?.bio}
+                            Keahlian
                         </Typography>
                     </motion.div>
-                    <motion.div variants={itemVariants} className="md:col-span-5">
-                        <Typography variant="h4" fontWeight={800} sx={{ mb: 2 }}>
-                            Perjalanan Karir
-                        </Typography>
-                        <ExperienceTimeline experiences={experiences} />
-                    </motion.div>
-                </div>
+                    <SkillChips skills={skills} />
+                </Box>
+            </motion.div>
 
-                <Divider sx={{ my: 8, opacity: 0.5 }} />
+            {achievements.length > 0 && (
+                <motion.div
+                    variants={staggerContainer}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, amount: 0.3 }}
+                >
+                    <Box sx={{ mt: 5 }}>
+                        <motion.div variants={sectionVariants}>
+                            <Typography
+                                variant="h5"
+                                fontWeight={800}
+                                mb={3}
+                                sx={{
+                                    position: 'relative',
+                                    display: 'inline-block',
+                                    '&::after': {
+                                        content: '""',
+                                        position: 'absolute',
+                                        bottom: -8,
+                                        left: 0,
+                                        width: '60%',
+                                        height: 3,
+                                        background: 'linear-gradient(90deg, #7C3AED, #06B6D4)',
+                                        borderRadius: 2
+                                    }
+                                }}
+                            >
+                                Pencapaian
+                            </Typography>
+                        </motion.div>
+                        <Box
+                            sx={{
+                                display: 'grid',
+                                gridTemplateColumns: {
+                                    xs: '1fr',
+                                    sm: 'repeat(2, 1fr)',
+                                    md: 'repeat(3, 1fr)'
+                                },
+                                gap: 3,
+                                mt: 2
+                            }}
+                        >
+                            {achievements.map((ach, index) => (
+                                <motion.div
+                                    key={ach.id}
+                                    variants={sectionVariants}
+                                    custom={index}
+                                    whileHover={{ y: -8, scale: 1.02 }}
+                                >
+                                    <Paper
+                                        elevation={0}
+                                        sx={{
+                                            p: 3,
+                                            height: '100%',
+                                            borderRadius: 3,
+                                            border: '1px solid',
+                                            borderColor: 'divider',
+                                            transition: 'all 0.3s',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            '&:hover': {
+                                                boxShadow: '0 8px 24px rgba(124, 58, 237, 0.15)',
+                                                borderColor: 'primary.main'
+                                            }
+                                        }}
+                                    >
+                                        <Stack spacing={1.5} sx={{ flex: 1 }}>
+                                            <Box
+                                                sx={{
+                                                    width: 48,
+                                                    height: 48,
+                                                    borderRadius: 2,
+                                                    background: 'linear-gradient(135deg, #7C3AED, #06B6D4)',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    fontSize: '1.5rem'
+                                                }}
+                                            >
+                                                🏆
+                                            </Box>
+                                            <Typography variant="h6" fontWeight={700}>
+                                                {ach.title}
+                                            </Typography>
+                                            <Typography variant="body2" color="primary.main" fontWeight={600}>
+                                                {ach.issuer}
+                                            </Typography>
+                                            <Typography variant="body2" color="text.secondary" sx={{ flex: 1 }}>
+                                                {ach.description}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                {new Date(ach.date).toLocaleDateString('id-ID', {
+                                                    year: 'numeric',
+                                                    month: 'long'
+                                                })}
+                                            </Typography>
 
-                {skills.length > 0 && (
-                    <Section title="Keahlian & Teknologi" icon={<CodeIcon />}>
-                        <Paper sx={{ p: { xs: 3, md: 4 } }}>
-                            <SkillChips skills={skills} groupOrder={skillGroupOrder} />
-                        </Paper>
-                    </Section>
-                )}
-
-                {achievements.length > 0 && (
-                    <Section title="Pencapaian & Sertifikasi" icon={<EmojiEventsIcon />}>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                            {achievements.map((item) => (
-                                <motion.div key={item.id} variants={itemVariants}>
-                                    <AchievementCard item={item} />
+                                            {ach.credential_url && (
+                                                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                                                    <Button
+                                                        variant="outlined"
+                                                        size="small"
+                                                        endIcon={<OpenInNewIcon />}
+                                                        href={ach.credential_url}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        fullWidth
+                                                        sx={{
+                                                            mt: 1,
+                                                            textTransform: 'none',
+                                                            fontWeight: 600,
+                                                            borderWidth: 2,
+                                                            '&:hover': {
+                                                                borderWidth: 2
+                                                            }
+                                                        }}
+                                                    >
+                                                        {ach.link_text || 'Lihat Kredensial'}
+                                                    </Button>
+                                                </motion.div>
+                                            )}
+                                        </Stack>
+                                    </Paper>
                                 </motion.div>
                             ))}
-                        </div>
-                    </Section>
-                )}
-            </motion.div>
-        </Container>
-    );
+                        </Box>
+                    </Box>
+                </motion.div>
+            )}
+        </Box>
+    )
 }

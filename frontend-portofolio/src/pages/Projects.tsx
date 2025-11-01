@@ -1,108 +1,196 @@
-import { useEffect, useState } from 'react'
-import { Container, Typography, Box, TextField, InputAdornment } from '@mui/material'
-import SearchIcon from '@mui/icons-material/Search'
-import { motion } from 'framer-motion'
+import { useEffect, useMemo, useState } from 'react'
+import { Typography, Box, CircularProgress, Chip, Stack } from '@mui/material'
+import { motion, AnimatePresence, Variants } from 'framer-motion'
 import { fetchPublicProjects } from '../api/projects'
 import ProjectCard from '../components/public/ProjectCard'
-import type { Project } from '../types'
+import { Project } from '../types'
+
+const containerVariants: Variants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.1
+        }
+    }
+};
+
+const itemVariants: Variants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+        y: 0,
+        opacity: 1,
+        transition: {
+            type: 'spring' as const,
+            stiffness: 100,
+            damping: 12
+        }
+    }
+};
 
 export default function Projects() {
     const [projects, setProjects] = useState<Project[]>([])
-    const [filteredProjects, setFilteredProjects] = useState<Project[]>([])
     const [loading, setLoading] = useState(true)
-    const [searchQuery, setSearchQuery] = useState('')
+    const [selectedFilter, setSelectedFilter] = useState<string>('all')
 
     useEffect(() => {
-        const loadProjects = async () => {
-            try {
-                const data = await fetchPublicProjects()
-                const published = data.filter((p) => p.status === 'published')
-                setProjects(published)
-                setFilteredProjects(published)
-            } catch (error) {
-                console.error('Error loading projects:', error)
-            } finally {
-                setLoading(false)
-            }
-        }
-        loadProjects()
+        fetchPublicProjects()
+            .then(setProjects)
+            .finally(() => setLoading(false))
     }, [])
 
-    useEffect(() => {
-        let filtered = projects
+    const allTech = useMemo(() => {
+        const techSet = new Set<string>()
+        projects.forEach((p) => {
+            if (p.tech_stack) {
+                p.tech_stack.split(',').forEach((t) => techSet.add(t.trim()))
+            }
+        })
+        return Array.from(techSet).sort()
+    }, [projects])
 
-        if (searchQuery) {
-            const lowerCaseQuery = searchQuery.toLowerCase()
-            filtered = filtered.filter(
-                (p) =>
-                    p.title.toLowerCase().includes(lowerCaseQuery) ||
-                    (p.summary && p.summary.toLowerCase().includes(lowerCaseQuery)) ||
-                    (p.tech_stack && p.tech_stack.toLowerCase().includes(lowerCaseQuery))
-            )
-        }
-
-        setFilteredProjects(filtered)
-    }, [searchQuery, projects])
+    const filteredProjects = useMemo(() => {
+        if (selectedFilter === 'all') return projects
+        return projects.filter((p) =>
+            p.tech_stack?.split(',').map((t) => t.trim()).includes(selectedFilter)
+        )
+    }, [projects, selectedFilter])
 
     if (loading) {
         return (
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-                <Typography>Loading...</Typography>
+            <Box sx={{ display: 'grid', placeItems: 'center', minHeight: '60vh' }}>
+                <CircularProgress size={50} />
             </Box>
         )
     }
 
     return (
-        <Container maxWidth="lg" sx={{ py: 8 }}>
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                <Box sx={{ mb: 6, textAlign: 'center' }}>
-                    <Typography variant="h2" fontWeight={700} gutterBottom>
-                        My Projects
-                    </Typography>
-                    <Typography variant="h6" color="text.secondary" sx={{ mb: 4 }}>
-                        Explore my portfolio of work
-                    </Typography>
+        <Box>
+            <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+            >
+                <Typography
+                    variant="h3"
+                    fontWeight={800}
+                    gutterBottom
+                    textAlign="center"
+                    sx={{
+                        background: 'linear-gradient(135deg, #7C3AED 0%, #06B6D4 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text',
+                        mb: 1
+                    }}
+                >
+                    Projects
+                </Typography>
+                <Typography
+                    variant="body1"
+                    color="text.secondary"
+                    textAlign="center"
+                    sx={{ mb: 4, maxWidth: 600, mx: 'auto' }}
+                >
+                    Berikut adalah koleksi proyek yang telah saya kerjakan
+                </Typography>
+            </motion.div>
 
-                    <TextField
-                        fullWidth
-                        placeholder="Search by title, summary, or technology..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        InputProps={{
-                            startAdornment: (
-                                <InputAdornment position="start">
-                                    <SearchIcon />
-                                </InputAdornment>
-                            ),
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+            >
+                <Stack
+                    direction="row"
+                    spacing={1}
+                    flexWrap="wrap"
+                    justifyContent="center"
+                    sx={{ mb: 4, gap: 1 }}
+                >
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                        <Chip
+                            label="All"
+                            clickable
+                            onClick={() => setSelectedFilter('all')}
+                            color={selectedFilter === 'all' ? 'primary' : 'default'}
+                            sx={{
+                                fontWeight: 600,
+                                transition: 'all 0.3s',
+                                ...(selectedFilter === 'all' && {
+                                    boxShadow: '0 4px 12px rgba(124, 58, 237, 0.3)'
+                                })
+                            }}
+                        />
+                    </motion.div>
+                    {allTech.slice(0, 10).map((tech) => (
+                        <motion.div
+                            key={tech}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                        >
+                            <Chip
+                                label={tech}
+                                clickable
+                                onClick={() => setSelectedFilter(tech)}
+                                color={selectedFilter === tech ? 'primary' : 'default'}
+                                sx={{
+                                    fontWeight: 600,
+                                    transition: 'all 0.3s',
+                                    ...(selectedFilter === tech && {
+                                        boxShadow: '0 4px 12px rgba(124, 58, 237, 0.3)'
+                                    })
+                                }}
+                            />
+                        </motion.div>
+                    ))}
+                </Stack>
+            </motion.div>
+
+            <motion.div
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+            >
+                <AnimatePresence mode="wait">
+                    <Box
+                        sx={{
+                            display: 'grid',
+                            gridTemplateColumns: {
+                                xs: '1fr',
+                                sm: 'repeat(2, 1fr)',
+                                md: 'repeat(3, 1fr)'
+                            },
+                            gap: 3
                         }}
-                        sx={{ maxWidth: 600, mx: 'auto' }}
-                    />
-                </Box>
-
-                {filteredProjects.length === 0 ? (
-                    <Box sx={{ textAlign: 'center', py: 8 }}>
-                        <Typography variant="h5" color="text.secondary">
-                            No projects found
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                            Try adjusting your search keywords
-                        </Typography>
-                    </Box>
-                ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                    >
                         {filteredProjects.map((project, index) => (
                             <motion.div
                                 key={project.id}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.5, delay: index * 0.1 }}
+                                variants={itemVariants}
+                                custom={index}
+                                layout
                             >
                                 <ProjectCard project={project} />
                             </motion.div>
                         ))}
-                    </div>
-                )}
+                    </Box>
+                </AnimatePresence>
             </motion.div>
-        </Container>
+
+            {filteredProjects.length === 0 && (
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.5 }}
+                >
+                    <Box sx={{ textAlign: 'center', py: 8 }}>
+                        <Typography variant="h6" color="text.secondary">
+                            Tidak ada proyek yang ditemukan dengan filter ini
+                        </Typography>
+                    </Box>
+                </motion.div>
+            )}
+        </Box>
     )
 }
