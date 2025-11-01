@@ -17,7 +17,7 @@ type Project struct {
 
 	GalleryJSON string `json:"gallery_json" gorm:"type:text"`
 	Role        string `json:"role" gorm:"size:40"`
-	Status      string `json:"status" gorm:"size:20;default:published"`
+	Status      string `json:"status" gorm:"size:20;default:published;index"`
 	IsFeatured  bool   `json:"is_featured" gorm:"default:false"`
 	ViewCount   int    `json:"view_count" gorm:"default:0"`
 
@@ -25,6 +25,6 @@ type Project struct {
 
 	StartDate *time.Time `json:"start_date"`
 	EndDate   *time.Time `json:"end_date"`
-	CreatedAt time.Time  `json:"created_at"`
+	CreatedAt time.Time  `json:"created_at" gorm:"index"`
 	UpdatedAt time.Time  `json:"updated_at"`
 }

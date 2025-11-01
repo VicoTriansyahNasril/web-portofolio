@@ -1,15 +1,11 @@
-import { useEffect, useState } from 'react'
-import { Box, Typography, Paper, Stack, CircularProgress, Button } from '@mui/material'
-import { motion, Variants } from 'framer-motion'
-import OpenInNewIcon from '@mui/icons-material/OpenInNew'
-import { fetchPublicProfile } from '@/api/profile'
-import { fetchPublicSkills } from '@/api/skills'
-import { fetchPublicExperiences } from '@/api/experiences'
-import { fetchPublicAchievements } from '@/api/achievements'
-import ProfileHeader from '@/components/public/ProfileHeader'
-import ExperienceTimeline from '@/components/public/ExperienceTimeline'
-import SkillChips from '@/components/public/SkillChips'
-import type { Profile, Skill, Experience, Achievement } from '@/types'
+import { Box, Typography, Paper, Stack, CircularProgress, Button } from '@mui/material';
+import { motion, Variants } from 'framer-motion';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import ProfileHeader from '@/components/public/ProfileHeader';
+import ExperienceTimeline from '@/components/public/ExperienceTimeline';
+import SkillChips from '@/components/public/SkillChips';
+import { usePublicData } from '@/hooks/usePublicData';
+import type { Profile, Skill, Experience, Achievement } from '@/types';
 
 const sectionVariants: Variants = {
     hidden: { opacity: 0, y: 30 },
@@ -34,34 +30,19 @@ const staggerContainer: Variants = {
 };
 
 export default function About() {
-    const [profile, setProfile] = useState<Profile | null>(null)
-    const [skills, setSkills] = useState<Skill[]>([])
-    const [experiences, setExperiences] = useState<Experience[]>([])
-    const [achievements, setAchievements] = useState<Achievement[]>([])
-    const [loading, setLoading] = useState(true)
+    const { data: profile, isLoading: profileLoading } = usePublicData<Profile>('/api/profile');
+    const { data: skills, isLoading: skillsLoading } = usePublicData<Skill[]>('/api/skills');
+    const { data: experiences, isLoading: expLoading } = usePublicData<Experience[]>('/api/experiences');
+    const { data: achievements, isLoading: achLoading } = usePublicData<Achievement[]>('/api/achievements');
 
-    useEffect(() => {
-        Promise.all([
-            fetchPublicProfile(),
-            fetchPublicSkills(),
-            fetchPublicExperiences(),
-            fetchPublicAchievements(),
-        ])
-            .then(([p, sk, ex, ac]) => {
-                setProfile(p)
-                setSkills(sk)
-                setExperiences(ex)
-                setAchievements(ac)
-            })
-            .finally(() => setLoading(false))
-    }, [])
+    const loading = profileLoading || skillsLoading || expLoading || achLoading;
 
     if (loading) {
         return (
             <Box sx={{ display: 'grid', placeItems: 'center', minHeight: '60vh' }}>
                 <CircularProgress size={50} />
             </Box>
-        )
+        );
     }
 
     return (
@@ -71,7 +52,7 @@ export default function About() {
                 animate="visible"
                 variants={sectionVariants}
             >
-                <ProfileHeader profile={profile} />
+                <ProfileHeader profile={profile || null} />
             </motion.div>
 
             <motion.div
@@ -122,7 +103,7 @@ export default function About() {
                 </Paper>
             </motion.div>
 
-            {experiences.length > 0 && (
+            {(experiences || []).length > 0 && (
                 <motion.div
                     variants={staggerContainer}
                     initial="hidden"
@@ -153,46 +134,48 @@ export default function About() {
                                 Pengalaman
                             </Typography>
                         </motion.div>
-                        <ExperienceTimeline experiences={experiences} />
+                        <ExperienceTimeline experiences={experiences || []} />
                     </Box>
                 </motion.div>
             )}
 
-            <motion.div
-                variants={staggerContainer}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, amount: 0.3 }}
-            >
-                <Box sx={{ mt: 5 }}>
-                    <motion.div variants={sectionVariants}>
-                        <Typography
-                            variant="h5"
-                            fontWeight={800}
-                            mb={3}
-                            sx={{
-                                position: 'relative',
-                                display: 'inline-block',
-                                '&::after': {
-                                    content: '""',
-                                    position: 'absolute',
-                                    bottom: -8,
-                                    left: 0,
-                                    width: '60%',
-                                    height: 3,
-                                    background: 'linear-gradient(90deg, #7C3AED, #06B6D4)',
-                                    borderRadius: 2
-                                }
-                            }}
-                        >
-                            Keahlian
-                        </Typography>
-                    </motion.div>
-                    <SkillChips skills={skills} />
-                </Box>
-            </motion.div>
+            {(skills || []).length > 0 && (
+                <motion.div
+                    variants={staggerContainer}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, amount: 0.3 }}
+                >
+                    <Box sx={{ mt: 5 }}>
+                        <motion.div variants={sectionVariants}>
+                            <Typography
+                                variant="h5"
+                                fontWeight={800}
+                                mb={3}
+                                sx={{
+                                    position: 'relative',
+                                    display: 'inline-block',
+                                    '&::after': {
+                                        content: '""',
+                                        position: 'absolute',
+                                        bottom: -8,
+                                        left: 0,
+                                        width: '60%',
+                                        height: 3,
+                                        background: 'linear-gradient(90deg, #7C3AED, #06B6D4)',
+                                        borderRadius: 2
+                                    }
+                                }}
+                            >
+                                Keahlian
+                            </Typography>
+                        </motion.div>
+                        <SkillChips skills={skills || []} />
+                    </Box>
+                </motion.div>
+            )}
 
-            {achievements.length > 0 && (
+            {(achievements || []).length > 0 && (
                 <motion.div
                     variants={staggerContainer}
                     initial="hidden"
@@ -235,7 +218,7 @@ export default function About() {
                                 mt: 2
                             }}
                         >
-                            {achievements.map((ach, index) => (
+                            {(achievements || []).map((ach, index) => (
                                 <motion.div
                                     key={ach.id}
                                     variants={sectionVariants}

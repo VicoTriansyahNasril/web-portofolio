@@ -9,14 +9,17 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
-
+	"backend-portofolio/internal/cache"
 	"backend-portofolio/internal/db"
 	"backend-portofolio/internal/models"
+
+	"github.com/gin-gonic/gin"
+	gocache "github.com/patrickmn/go-cache"
+	"gorm.io/gorm"
 )
 
-// ---- utils ----
+const publicProjectsCacheKey = "public_projects"
+
 func fromGalleryJSON(s string) []string {
 	if s == "" {
 		return []string{}
@@ -27,7 +30,6 @@ func fromGalleryJSON(s string) []string {
 }
 func toGalleryJSON(arr []string) string { b, _ := json.Marshal(arr); return string(b) }
 
-// normalisasi slug ke kebab-case
 var nonAlnum = regexp.MustCompile(`[^a-z0-9]+`)
 
 func normSlug(s string) string {
@@ -40,9 +42,13 @@ func normSlug(s string) string {
 	return s
 }
 
-// ====== PUBLIC ======
 func ListPublicProjects() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if cached, found := cache.C.Get(publicProjectsCacheKey); found {
+			c.JSON(http.StatusOK, cached)
+			return
+		}
+
 		var items []models.Project
 		if err := db.Conn.
 			Where("status = ?", "published").
@@ -51,26 +57,19 @@ func ListPublicProjects() gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "query error"})
 			return
 		}
+
 		resp := make([]gin.H, 0, len(items))
 		for _, p := range items {
 			resp = append(resp, gin.H{
-				"id":          p.ID,
-				"slug":        p.Slug,
-				"title":       p.Title,
-				"summary":     p.Summary,
-				"cover_url":   p.CoverURL,
-				"repo_url":    p.RepoURL,
-				"demo_url":    p.DemoURL,
-				"role":        p.Role,
-				"status":      p.Status,
-				"is_featured": p.IsFeatured,
-				"gallery":     fromGalleryJSON(p.GalleryJSON),
-				"sort_order":  p.SortOrder,
-				"created_at":  p.CreatedAt,
-				"updated_at":  p.UpdatedAt,
-				"tech_stack":  p.TechStack,
+				"id": p.ID, "slug": p.Slug, "title": p.Title, "summary": p.Summary,
+				"cover_url": p.CoverURL, "repo_url": p.RepoURL, "demo_url": p.DemoURL,
+				"role": p.Role, "status": p.Status, "is_featured": p.IsFeatured,
+				"gallery": fromGalleryJSON(p.GalleryJSON), "sort_order": p.SortOrder,
+				"created_at": p.CreatedAt, "updated_at": p.UpdatedAt, "tech_stack": p.TechStack,
 			})
 		}
+
+		cache.C.Set(publicProjectsCacheKey, resp, gocache.DefaultExpiration)
 		c.JSON(http.StatusOK, resp)
 	}
 }
@@ -78,6 +77,12 @@ func ListPublicProjects() gin.HandlerFunc {
 func GetProjectBySlug() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		slug := normSlug(c.Param("slug"))
+		cacheKey := "project_" + slug
+		if cached, found := cache.C.Get(cacheKey); found {
+			c.JSON(http.StatusOK, cached)
+			return
+		}
+
 		var p models.Project
 		if err := db.Conn.Where("slug = ? AND status = ?", slug, "published").First(&p).Error; err != nil {
 			if err == gorm.ErrRecordNotFound {
@@ -87,28 +92,21 @@ func GetProjectBySlug() gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "query error"})
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{
-			"id":          p.ID,
-			"slug":        p.Slug,
-			"title":       p.Title,
-			"summary":     p.Summary,
-			"body":        p.Body,
-			"cover_url":   p.CoverURL,
-			"repo_url":    p.RepoURL,
-			"demo_url":    p.DemoURL,
-			"role":        p.Role,
-			"status":      p.Status,
-			"is_featured": p.IsFeatured,
-			"gallery":     fromGalleryJSON(p.GalleryJSON),
-			"sort_order":  p.SortOrder,
-			"created_at":  p.CreatedAt,
-			"updated_at":  p.UpdatedAt,
-			"tech_stack":  p.TechStack,
-		})
+
+		resp := gin.H{
+			"id": p.ID, "slug": p.Slug, "title": p.Title, "summary": p.Summary,
+			"body": p.Body, "cover_url": p.CoverURL, "repo_url": p.RepoURL,
+			"demo_url": p.DemoURL, "role": p.Role, "status": p.Status,
+			"is_featured": p.IsFeatured, "gallery": fromGalleryJSON(p.GalleryJSON),
+			"sort_order": p.SortOrder, "created_at": p.CreatedAt, "updated_at": p.UpdatedAt,
+			"tech_stack": p.TechStack,
+		}
+
+		cache.C.Set(cacheKey, resp, gocache.DefaultExpiration)
+		c.JSON(http.StatusOK, resp)
 	}
 }
 
-// ====== ADMIN ======
 func AdminListProjects() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var items []models.Project
@@ -121,22 +119,12 @@ func AdminListProjects() gin.HandlerFunc {
 		resp := make([]gin.H, 0, len(items))
 		for _, p := range items {
 			resp = append(resp, gin.H{
-				"id":          p.ID,
-				"slug":        p.Slug,
-				"title":       p.Title,
-				"summary":     p.Summary,
-				"body":        p.Body,
-				"cover_url":   p.CoverURL,
-				"repo_url":    p.RepoURL,
-				"demo_url":    p.DemoURL,
-				"role":        p.Role,
-				"status":      p.Status,
-				"is_featured": p.IsFeatured,
-				"gallery":     fromGalleryJSON(p.GalleryJSON),
-				"sort_order":  p.SortOrder,
-				"created_at":  p.CreatedAt,
-				"updated_at":  p.UpdatedAt,
-				"tech_stack":  p.TechStack,
+				"id": p.ID, "slug": p.Slug, "title": p.Title, "summary": p.Summary,
+				"body": p.Body, "cover_url": p.CoverURL, "repo_url": p.RepoURL,
+				"demo_url": p.DemoURL, "role": p.Role, "status": p.Status,
+				"is_featured": p.IsFeatured, "gallery": fromGalleryJSON(p.GalleryJSON),
+				"sort_order": p.SortOrder, "created_at": p.CreatedAt, "updated_at": p.UpdatedAt,
+				"tech_stack": p.TechStack,
 			})
 		}
 		c.JSON(http.StatusOK, resp)
@@ -176,21 +164,13 @@ func CreateProject() gin.HandlerFunc {
 
 		now := time.Now()
 		p := models.Project{
-			Slug:        strings.TrimSpace(req.Slug),
-			Title:       strings.TrimSpace(req.Title),
-			Summary:     strings.TrimSpace(req.Summary),
-			Body:        req.Body,
-			CoverURL:    strings.TrimSpace(req.CoverURL),
-			RepoURL:     strings.TrimSpace(req.RepoURL),
-			DemoURL:     strings.TrimSpace(req.DemoURL),
-			Role:        strings.TrimSpace(req.Role),
-			Status:      strings.TrimSpace(req.Status),
-			IsFeatured:  req.IsFeatured,
-			GalleryJSON: toGalleryJSON(req.Gallery),
-			SortOrder:   &next,
-			CreatedAt:   now,
-			UpdatedAt:   now,
-			TechStack:   req.TechStack,
+			Slug: strings.TrimSpace(req.Slug), Title: strings.TrimSpace(req.Title),
+			Summary: strings.TrimSpace(req.Summary), Body: req.Body,
+			CoverURL: strings.TrimSpace(req.CoverURL), RepoURL: strings.TrimSpace(req.RepoURL),
+			DemoURL: strings.TrimSpace(req.DemoURL), Role: strings.TrimSpace(req.Role),
+			Status: strings.TrimSpace(req.Status), IsFeatured: req.IsFeatured,
+			GalleryJSON: toGalleryJSON(req.Gallery), SortOrder: &next,
+			CreatedAt: now, UpdatedAt: now, TechStack: req.TechStack,
 		}
 		if p.Status == "" {
 			p.Status = "published"
@@ -206,23 +186,14 @@ func CreateProject() gin.HandlerFunc {
 			return
 		}
 
+		cache.C.Delete(publicProjectsCacheKey)
 		c.JSON(http.StatusCreated, gin.H{
-			"id":          p.ID,
-			"slug":        p.Slug,
-			"title":       p.Title,
-			"summary":     p.Summary,
-			"body":        p.Body,
-			"cover_url":   p.CoverURL,
-			"repo_url":    p.RepoURL,
-			"demo_url":    p.DemoURL,
-			"role":        p.Role,
-			"status":      p.Status,
-			"is_featured": p.IsFeatured,
-			"gallery":     fromGalleryJSON(p.GalleryJSON),
-			"sort_order":  p.SortOrder,
-			"created_at":  p.CreatedAt,
-			"updated_at":  p.UpdatedAt,
-			"tech_stack":  p.TechStack,
+			"id": p.ID, "slug": p.Slug, "title": p.Title, "summary": p.Summary,
+			"body": p.Body, "cover_url": p.CoverURL, "repo_url": p.RepoURL,
+			"demo_url": p.DemoURL, "role": p.Role, "status": p.Status,
+			"is_featured": p.IsFeatured, "gallery": fromGalleryJSON(p.GalleryJSON),
+			"sort_order": p.SortOrder, "created_at": p.CreatedAt, "updated_at": p.UpdatedAt,
+			"tech_stack": p.TechStack,
 		})
 	}
 }
@@ -316,6 +287,9 @@ func UpdateProject() gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
+
+		cache.C.Delete(publicProjectsCacheKey)
+		cache.C.Delete("project_" + p.Slug)
 		c.JSON(http.StatusOK, gin.H{"ok": true})
 	}
 }
@@ -335,6 +309,7 @@ func DeleteProject() gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "delete error"})
 			return
 		}
+		cache.C.Delete(publicProjectsCacheKey)
 		c.JSON(http.StatusOK, gin.H{"ok": true})
 	}
 }
@@ -363,6 +338,7 @@ func ReorderProjects() gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "commit error"})
 			return
 		}
+		cache.C.Delete(publicProjectsCacheKey)
 		c.JSON(http.StatusOK, gin.H{"ok": true})
 	}
 }

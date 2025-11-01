@@ -4,8 +4,10 @@ go 1.23.0
 
 require (
 	github.com/cloudinary/cloudinary-go/v2 v2.13.0
+	github.com/gin-contrib/gzip v1.0.1
 	github.com/gin-gonic/gin v1.11.0
 	github.com/golang-jwt/jwt/v5 v5.3.0
+	github.com/patrickmn/go-cache v2.1.0+incompatible
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.31.0
 )

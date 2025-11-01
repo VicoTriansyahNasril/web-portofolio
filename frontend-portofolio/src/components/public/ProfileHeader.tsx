@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import LocationOnRoundedIcon from '@mui/icons-material/LocationOnRounded';
 import FileDownloadRoundedIcon from '@mui/icons-material/FileDownloadRounded';
 import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
-import { fileUrl } from '@/utils/url';
+import { transformedFileUrl } from '@/utils/url';
 import type { Profile } from '@/types';
 
 interface ProfileHeaderProps {
@@ -51,7 +51,7 @@ export default function ProfileHeader({ profile }: ProfileHeaderProps) {
                         transition={{ delay: 0.2 }}
                     >
                         <Avatar
-                            src={fileUrl(profile.photo_url)}
+                            src={transformedFileUrl(profile.photo_url, { width: 200 })}
                             alt={profile.full_name}
                             sx={{
                                 width: { xs: 120, sm: 140 },
@@ -140,7 +140,7 @@ export default function ProfileHeader({ profile }: ProfileHeaderProps) {
                             <Box sx={{ pt: 1 }}>
                                 <Button
                                     variant="contained"
-                                    href={fileUrl(profile.resume_url)}
+                                    href={transformedFileUrl(profile.resume_url)}
                                     target="_blank"
                                     startIcon={<FileDownloadRoundedIcon />}
                                     size="large"
