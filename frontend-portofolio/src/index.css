@@ -1,3 +1,40 @@
+/* portofolio/frontend-portofolio/src/index.css */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/inter-v13-latin-regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/inter-v13-latin-500.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/inter-v13-latin-600.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/inter-v13-latin-700.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('/fonts/inter-v13-latin-800.woff2') format('woff2');
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -22,6 +59,27 @@
 body {
     margin: 0;
     min-height: 100vh;
+    position: relative; /* Diperlukan untuk pseudo-element */
+}
+
+/* Penambahan untuk Latar Belakang Admin */
+@keyframes moveGradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.admin-background::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -2; /* Di belakang semua konten */
+    background: radial-gradient(at 20% 20%, hsla(260, 80%, 20%, 0.3) 0px, transparent 50%),
+                radial-gradient(at 80% 20%, hsla(200, 80%, 25%, 0.25) 0px, transparent 50%),
+                radial-gradient(at 20% 80%, hsla(280, 70%, 30%, 0.3) 0px, transparent 50%),
+                radial-gradient(at 80% 80%, hsla(220, 80%, 25%, 0.3) 0px, transparent 50%);
+    background-size: 300% 300%;
+    animation: moveGradient 30s ease infinite;
 }
 
 #root {

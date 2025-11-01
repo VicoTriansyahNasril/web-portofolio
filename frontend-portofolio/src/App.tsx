@@ -23,6 +23,21 @@ import AdminAchievements from './pages/admin/AdminAchievements';
 import AdminAnalytics from './pages/admin/AdminAnalytics';
 import PrivateRoute from './auth/PrivateRoute';
 
+const Home = lazy(() => import('./pages/Home'));
+const Projects = lazy(() => import('./pages/Projects'));
+const ProjectDetail = lazy(() => import('./pages/ProjectDetail'));
+const About = lazy(() => import('./pages/About'));
+const Login = lazy(() => import('./pages/admin/Login'));
+const Dashboard = lazy(() => import('./pages/admin/Dashboard'));
+const AdminProjects = lazy(() => import('./pages/admin/AdminProjects'));
+const AdminProfile = lazy(() => import('./pages/admin/AdminProfile'));
+const AdminSkills = lazy(() => import('./pages/admin/AdminSkills'));
+const AdminExperiences = lazy(() => import('./pages/admin/AdminExperiences'));
+const AdminAchievements = lazy(() => import('./pages/admin/AdminAchievements'));
+const AdminAnalytics = lazy(() => import('./pages/admin/AdminAnalytics'));
+const Interactive3D = lazy(() => import('./components/ui/Interactive3D'));
+const InteractiveBackground = lazy(() => import('./components/ui/InteractiveBackground'));
+
 const pageVariants = {
   initial: { opacity: 0, y: 20 },
   in: { opacity: 1, y: 0 },
@@ -83,6 +98,8 @@ function AdminLayout({ children }: { children: ReactNode }) {
 export default function App() {
   const location = useLocation();
   const isHomePage = location.pathname === '/';
+  const isAdminPage = location.pathname.startsWith('/admin');
+  const isPublicNonHomePage = !isHomePage && !isAdminPage;
 
   const initialMode = (() => {
     const saved = localStorage.getItem('theme');
@@ -95,13 +112,17 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('theme', mode);
     document.body.setAttribute('data-color-mode', mode);
-  }, [mode]);
+
+    // Menambahkan atau menghapus kelas background admin
+    if (isAdminPage) {
+      document.body.classList.add('admin-background');
+    } else {
+      document.body.classList.remove('admin-background');
+    }
+  }, [mode, isAdminPage]);
 
   useEffect(() => {
-    if (location.pathname.startsWith('/admin')) {
-      return;
-    }
-
+    if (isAdminPage) return;
     const trackPageView = async (path: string) => {
       try {
         await fetch('/api/track', {
@@ -117,7 +138,7 @@ export default function App() {
     };
 
     trackPageView(location.pathname);
-  }, [location.pathname]);
+  }, [location.pathname, isAdminPage]);
 
   const toggleMode = () => setMode((prev) => (prev === 'light' ? 'dark' : 'light'));
 
@@ -125,10 +146,14 @@ export default function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
 
-      {isHomePage ? (
+      {isHomePage && (
         <Suspense fallback={null}><Interactive3D /></Suspense>
-      ) : (
-        <AnimatedBackground />
+      )}
+      {isPublicNonHomePage && (
+        <>
+          <AnimatedBackground />
+          <Suspense fallback={null}><InteractiveBackground /></Suspense>
+        </>
       )}
 
       <AnimatePresence mode="wait">
