@@ -24,7 +24,7 @@ func Init(cfg config.Config) {
 	Conn, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger:                 logger.Default.LogMode(logger.Silent),
 		SkipDefaultTransaction: true,
-		PrepareStmt:            true,
+		PrepareStmt:            false,
 	})
 
 	if err != nil {
