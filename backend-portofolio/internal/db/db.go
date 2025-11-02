@@ -4,6 +4,7 @@ package db
 import (
 	"fmt"
 	"log"
+	"strings" // <-- TAMBAHKAN INI
 	"time"
 
 	"backend-portofolio/internal/config"
@@ -40,7 +41,8 @@ func Init(cfg config.Config) {
 	sqlDB.SetMaxIdleConns(10)
 	sqlDB.SetConnMaxLifetime(15 * time.Minute)
 
-	if err := Conn.AutoMigrate(
+	log.Println("Running database migration...")
+	migrationErr := Conn.AutoMigrate(
 		&models.Project{},
 		&models.Profile{},
 		&models.SocialLink{},
@@ -48,7 +50,13 @@ func Init(cfg config.Config) {
 		&models.Experience{},
 		&models.Achievement{},
 		&models.PageVisit{},
-	); err != nil {
-		log.Fatalf("DB migrate error: %v\n", err)
+	)
+
+	if migrationErr != nil && !strings.Contains(migrationErr.Error(), "already exists") {
+		log.Fatalf("DB migrate error: %v\n", migrationErr)
+	} else if migrationErr != nil {
+		log.Println("Migration notice: one or more tables already exist, continuing startup.")
+	} else {
+		log.Println("Database migration completed successfully.")
 	}
 }
