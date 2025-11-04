@@ -1,4 +1,3 @@
-// internal/handlers/profile_handler.go
 package handlers
 
 import (
@@ -20,7 +19,6 @@ type upsertProfileReq struct {
 	Socials         []models.SocialLink `json:"socials"`
 }
 
-// PUBLIC
 func GetProfilePublic() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var p models.Profile
@@ -32,7 +30,6 @@ func GetProfilePublic() gin.HandlerFunc {
 	}
 }
 
-// ADMIN (singleton upsert)
 func UpsertProfile() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req upsertProfileReq
@@ -65,12 +62,17 @@ func UpsertProfile() gin.HandlerFunc {
 		}
 
 		db.Conn.Where("profile_id = ?", p.ID).Delete(&models.SocialLink{})
-		for _, s := range req.Socials {
-			s.ProfileID = p.ID
-			db.Conn.Create(&s)
+		if len(req.Socials) > 0 {
+			for i := range req.Socials {
+				req.Socials[i].ProfileID = p.ID
+			}
+			if err := db.Conn.Create(&req.Socials).Error; err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "create socials error"})
+				return
+			}
 		}
 
-		db.Conn.Preload("Socials").First(&p, p.ID)
+		p.Socials = req.Socials
 		c.JSON(http.StatusOK, p)
 	}
 }

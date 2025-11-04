@@ -1,4 +1,3 @@
-// internal/handlers/skill_handler.go
 package handlers
 
 import (
@@ -66,13 +65,20 @@ func ReorderSkills() gin.HandlerFunc {
 	}
 }
 
-// Create, Update, Delete
 func CreateSkill() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var s models.Skill
-		if err := c.ShouldBindJSON(&s); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payload"})
+		var payload struct {
+			Group string `json:"group" binding:"required"`
+			Name  string `json:"name" binding:"required"`
+		}
+		if err := c.ShouldBindJSON(&payload); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payload: " + err.Error()})
 			return
+		}
+
+		s := models.Skill{
+			Group: payload.Group,
+			Name:  payload.Name,
 		}
 		if err := db.Conn.Create(&s).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "create error"})

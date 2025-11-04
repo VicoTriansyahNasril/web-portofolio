@@ -1,15 +1,15 @@
-// internal/handlers/achievement_handler.go
 package handlers
 
 import (
 	"backend-portofolio/internal/db"
 	"backend-portofolio/internal/models"
+	"strconv"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"time"
 )
 
-// PUBLIC
 func ListPublicAchievements() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var items []models.Achievement
@@ -18,7 +18,6 @@ func ListPublicAchievements() gin.HandlerFunc {
 	}
 }
 
-// ADMIN
 func AdminListAchievements() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var items []models.Achievement
@@ -44,7 +43,13 @@ func CreateAchievement() gin.HandlerFunc {
 
 func UpdateAchievement() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		id := c.Param("id")
+		idStr := c.Param("id")
+		id, err := strconv.ParseInt(idStr, 10, 64)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+			return
+		}
+
 		var item models.Achievement
 		if err := db.Conn.First(&item, id).Error; err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
@@ -64,7 +69,13 @@ func UpdateAchievement() gin.HandlerFunc {
 
 func DeleteAchievement() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		id := c.Param("id")
+		idStr := c.Param("id")
+		id, err := strconv.ParseInt(idStr, 10, 64)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+			return
+		}
+
 		if err := db.Conn.Delete(&models.Achievement{}, id).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "delete error"})
 			return

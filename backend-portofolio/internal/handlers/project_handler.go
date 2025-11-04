@@ -1,4 +1,3 @@
-// internal/handlers/project_handler.go
 package handlers
 
 import (
@@ -28,7 +27,14 @@ func fromGalleryJSON(s string) []string {
 	_ = json.Unmarshal([]byte(s), &out)
 	return out
 }
-func toGalleryJSON(arr []string) string { b, _ := json.Marshal(arr); return string(b) }
+
+func toGalleryJSON(arr []string) string {
+	if arr == nil {
+		return "[]"
+	}
+	b, _ := json.Marshal(arr)
+	return string(b)
+}
 
 var nonAlnum = regexp.MustCompile(`[^a-z0-9]+`)
 
@@ -61,11 +67,21 @@ func ListPublicProjects() gin.HandlerFunc {
 		resp := make([]gin.H, 0, len(items))
 		for _, p := range items {
 			resp = append(resp, gin.H{
-				"id": p.ID, "slug": p.Slug, "title": p.Title, "summary": p.Summary,
-				"cover_url": p.CoverURL, "repo_url": p.RepoURL, "demo_url": p.DemoURL,
-				"role": p.Role, "status": p.Status, "is_featured": p.IsFeatured,
-				"gallery": fromGalleryJSON(p.GalleryJSON), "sort_order": p.SortOrder,
-				"created_at": p.CreatedAt, "updated_at": p.UpdatedAt, "tech_stack": p.TechStack,
+				"id":          p.ID,
+				"slug":        p.Slug,
+				"title":       p.Title,
+				"summary":     p.Summary,
+				"cover_url":   p.CoverURL,
+				"repo_url":    p.RepoURL,
+				"demo_url":    p.DemoURL,
+				"role":        p.Role,
+				"status":      p.Status,
+				"is_featured": p.IsFeatured,
+				"gallery":     fromGalleryJSON(p.GalleryJSON),
+				"sort_order":  p.SortOrder,
+				"created_at":  p.CreatedAt,
+				"updated_at":  p.UpdatedAt,
+				"tech_stack":  p.TechStack,
 			})
 		}
 
@@ -94,12 +110,22 @@ func GetProjectBySlug() gin.HandlerFunc {
 		}
 
 		resp := gin.H{
-			"id": p.ID, "slug": p.Slug, "title": p.Title, "summary": p.Summary,
-			"body": p.Body, "cover_url": p.CoverURL, "repo_url": p.RepoURL,
-			"demo_url": p.DemoURL, "role": p.Role, "status": p.Status,
-			"is_featured": p.IsFeatured, "gallery": fromGalleryJSON(p.GalleryJSON),
-			"sort_order": p.SortOrder, "created_at": p.CreatedAt, "updated_at": p.UpdatedAt,
-			"tech_stack": p.TechStack,
+			"id":          p.ID,
+			"slug":        p.Slug,
+			"title":       p.Title,
+			"summary":     p.Summary,
+			"body":        p.Body,
+			"cover_url":   p.CoverURL,
+			"repo_url":    p.RepoURL,
+			"demo_url":    p.DemoURL,
+			"role":        p.Role,
+			"status":      p.Status,
+			"is_featured": p.IsFeatured,
+			"gallery":     fromGalleryJSON(p.GalleryJSON),
+			"sort_order":  p.SortOrder,
+			"created_at":  p.CreatedAt,
+			"updated_at":  p.UpdatedAt,
+			"tech_stack":  p.TechStack,
 		}
 
 		cache.C.Set(cacheKey, resp, gocache.DefaultExpiration)
@@ -119,12 +145,22 @@ func AdminListProjects() gin.HandlerFunc {
 		resp := make([]gin.H, 0, len(items))
 		for _, p := range items {
 			resp = append(resp, gin.H{
-				"id": p.ID, "slug": p.Slug, "title": p.Title, "summary": p.Summary,
-				"body": p.Body, "cover_url": p.CoverURL, "repo_url": p.RepoURL,
-				"demo_url": p.DemoURL, "role": p.Role, "status": p.Status,
-				"is_featured": p.IsFeatured, "gallery": fromGalleryJSON(p.GalleryJSON),
-				"sort_order": p.SortOrder, "created_at": p.CreatedAt, "updated_at": p.UpdatedAt,
-				"tech_stack": p.TechStack,
+				"id":          p.ID,
+				"slug":        p.Slug,
+				"title":       p.Title,
+				"summary":     p.Summary,
+				"body":        p.Body,
+				"cover_url":   p.CoverURL,
+				"repo_url":    p.RepoURL,
+				"demo_url":    p.DemoURL,
+				"role":        p.Role,
+				"status":      p.Status,
+				"is_featured": p.IsFeatured,
+				"gallery":     fromGalleryJSON(p.GalleryJSON),
+				"sort_order":  p.SortOrder,
+				"created_at":  p.CreatedAt,
+				"updated_at":  p.UpdatedAt,
+				"tech_stack":  p.TechStack,
 			})
 		}
 		c.JSON(http.StatusOK, resp)
@@ -154,29 +190,48 @@ func CreateProject() gin.HandlerFunc {
 			return
 		}
 
-		var max sql.NullInt64
-		row := db.Conn.Model(&models.Project{}).Select("MAX(sort_order)").Row()
-		_ = row.Scan(&max)
-		next := 0
-		if max.Valid {
-			next = int(max.Int64) + 1
-		}
+		var p models.Project
+		err := db.Conn.Transaction(func(tx *gorm.DB) error {
+			var max sql.NullInt64
+			if err := tx.Model(&models.Project{}).Select("MAX(sort_order)").Row().Scan(&max); err != nil {
+				return err
+			}
 
-		now := time.Now()
-		p := models.Project{
-			Slug: strings.TrimSpace(req.Slug), Title: strings.TrimSpace(req.Title),
-			Summary: strings.TrimSpace(req.Summary), Body: req.Body,
-			CoverURL: strings.TrimSpace(req.CoverURL), RepoURL: strings.TrimSpace(req.RepoURL),
-			DemoURL: strings.TrimSpace(req.DemoURL), Role: strings.TrimSpace(req.Role),
-			Status: strings.TrimSpace(req.Status), IsFeatured: req.IsFeatured,
-			GalleryJSON: toGalleryJSON(req.Gallery), SortOrder: &next,
-			CreatedAt: now, UpdatedAt: now, TechStack: req.TechStack,
-		}
-		if p.Status == "" {
-			p.Status = "published"
-		}
+			next := 0
+			if max.Valid {
+				next = int(max.Int64) + 1
+			}
 
-		if err := db.Conn.Create(&p).Error; err != nil {
+			now := time.Now()
+			p = models.Project{
+				Slug:        strings.TrimSpace(req.Slug),
+				Title:       strings.TrimSpace(req.Title),
+				Summary:     strings.TrimSpace(req.Summary),
+				Body:        req.Body,
+				CoverURL:    strings.TrimSpace(req.CoverURL),
+				RepoURL:     strings.TrimSpace(req.RepoURL),
+				DemoURL:     strings.TrimSpace(req.DemoURL),
+				Role:        strings.TrimSpace(req.Role),
+				Status:      strings.TrimSpace(req.Status),
+				IsFeatured:  req.IsFeatured,
+				GalleryJSON: toGalleryJSON(req.Gallery),
+				SortOrder:   &next,
+				CreatedAt:   now,
+				UpdatedAt:   now,
+				TechStack:   req.TechStack,
+			}
+			if p.Status == "" {
+				p.Status = "published"
+			}
+
+			if err := tx.Create(&p).Error; err != nil {
+				return err
+			}
+
+			return nil
+		})
+
+		if err != nil {
 			low := strings.ToLower(err.Error())
 			if strings.Contains(low, "duplicate") || strings.Contains(low, "unique") {
 				c.JSON(http.StatusConflict, gin.H{"error": "slug already exists"})
@@ -188,12 +243,22 @@ func CreateProject() gin.HandlerFunc {
 
 		cache.C.Delete(publicProjectsCacheKey)
 		c.JSON(http.StatusCreated, gin.H{
-			"id": p.ID, "slug": p.Slug, "title": p.Title, "summary": p.Summary,
-			"body": p.Body, "cover_url": p.CoverURL, "repo_url": p.RepoURL,
-			"demo_url": p.DemoURL, "role": p.Role, "status": p.Status,
-			"is_featured": p.IsFeatured, "gallery": fromGalleryJSON(p.GalleryJSON),
-			"sort_order": p.SortOrder, "created_at": p.CreatedAt, "updated_at": p.UpdatedAt,
-			"tech_stack": p.TechStack,
+			"id":          p.ID,
+			"slug":        p.Slug,
+			"title":       p.Title,
+			"summary":     p.Summary,
+			"body":        p.Body,
+			"cover_url":   p.CoverURL,
+			"repo_url":    p.RepoURL,
+			"demo_url":    p.DemoURL,
+			"role":        p.Role,
+			"status":      p.Status,
+			"is_featured": p.IsFeatured,
+			"gallery":     fromGalleryJSON(p.GalleryJSON),
+			"sort_order":  p.SortOrder,
+			"created_at":  p.CreatedAt,
+			"updated_at":  p.UpdatedAt,
+			"tech_stack":  p.TechStack,
 		})
 	}
 }

@@ -1,12 +1,13 @@
-// internal/handlers/experience_handler.go
 package handlers
 
 import (
 	"backend-portofolio/internal/db"
 	"backend-portofolio/internal/models"
+	"strconv"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"time"
 )
 
 type experiencePayload struct {
@@ -20,7 +21,6 @@ type experiencePayload struct {
 	SortOrder   int     `json:"sort_order"`
 }
 
-// PUBLIC
 func ListPublicExperiences() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var items []models.Experience
@@ -29,7 +29,6 @@ func ListPublicExperiences() gin.HandlerFunc {
 	}
 }
 
-// ADMIN
 func AdminListExperiences() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var items []models.Experience
@@ -83,7 +82,13 @@ func CreateExperience() gin.HandlerFunc {
 
 func UpdateExperience() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		id := c.Param("id")
+		idStr := c.Param("id")
+		id, err := strconv.ParseInt(idStr, 10, 64)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+			return
+		}
+
 		var item models.Experience
 		if err := db.Conn.First(&item, id).Error; err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
@@ -135,7 +140,13 @@ func UpdateExperience() gin.HandlerFunc {
 
 func DeleteExperience() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		id := c.Param("id")
+		idStr := c.Param("id")
+		id, err := strconv.ParseInt(idStr, 10, 64)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+			return
+		}
+
 		if err := db.Conn.Delete(&models.Experience{}, id).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "delete error"})
 			return

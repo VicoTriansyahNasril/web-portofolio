@@ -27,10 +27,15 @@
             "@/*": [
                 "src/*"
             ]
-        }
+        },
+        "types": [
+            "vitest/globals"
+        ]
     },
     "include": [
-        "src"
+        "src",
+        "tests",
+        "vite.config.ts"
     ],
     "references": [
         {
