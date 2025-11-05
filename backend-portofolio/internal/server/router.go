@@ -56,6 +56,7 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 		publicAPI.GET("/projects", handlers.ListPublicProjects())
 		publicAPI.GET("/projects/:slug", handlers.GetProjectBySlug())
 		publicAPI.GET("/profile", handlers.GetProfilePublic())
+		publicAPI.HEAD("/profile", handlers.GetProfilePublic())
 		publicAPI.GET("/skills", handlers.GetSkillsPublic())
 		publicAPI.GET("/experiences", handlers.ListPublicExperiences())
 		publicAPI.GET("/achievements", handlers.ListPublicAchievements())
