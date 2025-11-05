@@ -6,8 +6,11 @@ let ws: WebSocket | null = null
 let reconnectTimeout: NodeJS.Timeout
 
 const connect = (mutate: Mutator) => {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const host = import.meta.env.DEV ? 'localhost:8080' : window.location.host
+    const protocol = 'wss:'
+    const host = import.meta.env.DEV
+        ? 'localhost:8080'
+        : 'web-portofolio-p2rn.onrender.com'
+
     const wsUrl = `${protocol}//${host}/ws`
 
     ws = new WebSocket(wsUrl)
@@ -29,7 +32,7 @@ const connect = (mutate: Mutator) => {
     }
 
     ws.onclose = (event) => {
-        if (event.code !== 1000) {
+        if (event.code !== 1000) { // 1000 is normal closure
             console.log('WebSocket disconnected, attempting to reconnect...')
             clearTimeout(reconnectTimeout)
             reconnectTimeout = setTimeout(() => connect(mutate), 3000)
