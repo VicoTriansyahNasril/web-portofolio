@@ -1,13 +1,7 @@
 import useSWR from 'swr';
-import { api } from '../api/client';
-
-const fetcher = async <T>(url: string): Promise<T> => {
-    const response = await api.get<T>(url);
-    return response.data;
-};
 
 export function usePublicData<T>(url: string | null) {
-    const { data, error, isLoading, isValidating } = useSWR<T>(url, fetcher, {
+    const { data, error, isLoading, isValidating } = useSWR<T>(url, {
         revalidateOnFocus: false,
         revalidateIfStale: true,
         dedupingInterval: 1000 * 60 * 5,

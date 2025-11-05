@@ -1,19 +1,21 @@
-import { useEffect, useRef, useState, DragEvent } from 'react'
-import { Box, Button, Chip, IconButton, Paper, Stack, Typography, Divider, CircularProgress } from '@mui/material'
+import { useState, useRef, DragEvent } from 'react'
+import { Box, Button, Chip, IconButton, Paper, Stack, Typography, Divider, CircularProgress, Alert } from '@mui/material'
 import EditIcon from '@mui/icons-material/Edit'
 import VisibilityIcon from '@mui/icons-material/Visibility'
 import DeleteIcon from '@mui/icons-material/Delete'
 import AddIcon from '@mui/icons-material/Add'
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator'
-import { deleteAdminProject, fetchAdminProjects, createAdminProject, updateAdminProject, reorderAdminProjects } from '../../api/projects'
+import useSWR from 'swr'
+import { deleteAdminProject, createAdminProject, updateAdminProject, reorderAdminProjects } from '../../api/projects'
 import ProjectForm from '../../components/admin/ProjectForm'
 import ProjectPreview from '../../components/admin/ProjectPreview'
 import { alert, confirm } from '../../utils/confirm'
 import { Project } from '../../types'
 
+const PROJECTS_API_KEY = '/api/admin/projects'
+
 export default function AdminProjects() {
-    const [items, setItems] = useState<Project[]>([])
-    const [loading, setLoading] = useState(true)
+    const { data: items, error, isLoading, mutate } = useSWR<Project[]>(PROJECTS_API_KEY)
     const [editing, setEditing] = useState(false)
     const [initialData, setInitialData] = useState<Partial<Project>>({})
     const [previewProject, setPreviewProject] = useState<Project | null>(null)
@@ -21,34 +23,19 @@ export default function AdminProjects() {
     const [overIdx, setOverIdx] = useState<number | null>(null)
     const dragIndexRef = useRef<number | null>(null)
 
-    const fetchProjects = async () => {
-        const data = await fetchAdminProjects()
-        const sorted = [...(data || [])].sort((a, b) => {
-            const ao = a.sort_order ?? Infinity
-            const bo = b.sort_order ?? Infinity
-            return ao - bo || new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        })
-        setItems(sorted)
-        setLoading(false)
-    }
-
-    useEffect(() => {
-        fetchProjects()
-    }, [])
-
     const handleNew = () => { setInitialData({}); setEditing(true); window.scrollTo({ top: 0, behavior: 'smooth' }) }
-    const handleEdit = (p: Project) => {
-        setInitialData(p); setEditing(true); window.scrollTo({ top: 0, behavior: 'smooth' })
-    }
+    const handleEdit = (p: Project) => { setInitialData(p); setEditing(true); window.scrollTo({ top: 0, behavior: 'smooth' }) }
 
     const handleDelete = async (id: number, title: string) => {
         const res = await confirm({ title: `Hapus "${title}"?`, text: 'Aksi ini tidak bisa dibatalkan.' })
         if (res.isConfirmed) {
+            const optimisticData = items?.filter((p) => p.id !== id)
+            await mutate(optimisticData, false)
             try {
                 await deleteAdminProject(id)
-                setItems((prev) => prev.filter((x) => x.id !== id))
                 alert({ title: 'Sukses', text: 'Proyek berhasil dihapus.' })
             } catch (_err) {
+                await mutate(items, false)
                 alert({ title: 'Error', text: 'Gagal menghapus proyek.', icon: 'error' })
             }
         }
@@ -62,42 +49,39 @@ export default function AdminProjects() {
                 await createAdminProject(payload)
             }
             setEditing(false); setInitialData({})
-            fetchProjects()
+            mutate()
             alert({ title: 'Sukses', text: 'Proyek berhasil disimpan.' })
         } catch (_err) {
             alert({ title: 'Error', text: 'Gagal menyimpan proyek.', icon: 'error' })
         }
     }
 
-    const onRowDragStart = (e: DragEvent, idx: number) => {
-        dragIndexRef.current = idx; setDragIdx(idx)
-        e.dataTransfer.effectAllowed = 'move'
-        e.dataTransfer.setData('text/html', '')
-    }
+    const onRowDragStart = (e: DragEvent, idx: number) => { dragIndexRef.current = idx; setDragIdx(idx); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/html', '') }
     const onRowDragOver = (e: DragEvent, idx: number) => { e.preventDefault(); setOverIdx(idx) }
     const onRowDrop = async (e: DragEvent, idx: number) => {
         e.preventDefault()
         const from = dragIndexRef.current; const to = idx
         setOverIdx(null); setDragIdx(null); dragIndexRef.current = null
-        if (from === null || to === null || from === to) return
+        if (from === null || to === null || from === to || !items) return
 
         const originalOrder = [...items]
-        const next = [...items]
+        const next = [...originalOrder]
         const [moved] = next.splice(from, 1)
         next.splice(to, 0, moved)
-        setItems(next)
 
+        await mutate(next, false)
         try {
             const reorderPayload = next.map((p, i) => ({ id: p.id, sort_order: i }))
-            await reorderAdminProjects(reorderPayload);
+            await reorderAdminProjects(reorderPayload)
         } catch {
             alert({ title: 'Error', text: 'Gagal menyimpan urutan baru.', icon: 'error' })
-            setItems(originalOrder)
+            await mutate(originalOrder, false)
         }
     }
     const onRowDragEnd = () => { setOverIdx(null); setDragIdx(null); dragIndexRef.current = null }
 
-    if (loading) return <Box sx={{ display: 'grid', placeItems: 'center', minHeight: 400 }}><CircularProgress /></Box>
+    if (isLoading) return <Box sx={{ display: 'grid', placeItems: 'center', minHeight: 400 }}><CircularProgress /></Box>
+    if (error) return <Alert severity="error">Gagal memuat data proyek.</Alert>
 
     return (
         <Box sx={{ maxWidth: 980, mx: 'auto' }}>
@@ -113,9 +97,9 @@ export default function AdminProjects() {
                     onCancel={() => { setEditing(false); setInitialData({}) }}
                 />
             )}
-            {!editing && items.length > 0 && <Divider sx={{ my: 2 }} />}
+            {!editing && items && items.length > 0 && <Divider sx={{ my: 2 }} />}
 
-            {!editing && (
+            {!editing && items && (
                 <Stack spacing={2} sx={{
                     '& .row': { transition: 'transform .18s ease, box-shadow .18s ease' },
                     '& .row.dragging': { transform: 'scale(1.01)', boxShadow: 6, opacity: 0.9, cursor: 'grabbing' },

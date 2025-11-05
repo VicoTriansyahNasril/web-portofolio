@@ -1,24 +1,42 @@
-// internal/handlers/achievement_handler.go
 package handlers
 
 import (
+	"backend-portofolio/internal/cache"
 	"backend-portofolio/internal/db"
 	"backend-portofolio/internal/models"
-	"github.com/gin-gonic/gin"
+	"backend-portofolio/internal/websocket"
+	"encoding/json"
 	"net/http"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
-// PUBLIC
+func invalidateAchievementCache() {
+	cache.DelByPattern("public_achievements*")
+	websocket.GetHub().BroadcastEvent("change", "/api/achievements")
+}
+
 func ListPublicAchievements() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var items []models.Achievement
+		const cacheKey = "public_achievements"
+		cached, err := cache.Get(cacheKey)
+		if err == nil {
+			c.Header("Content-Type", "application/json; charset=utf-8")
+			c.String(http.StatusOK, cached)
+			return
+		}
+
+		items := make([]models.Achievement, 0)
 		db.Conn.Order("sort_order asc, date desc").Find(&items)
+
+		jsonData, _ := json.Marshal(items)
+		cache.Set(cacheKey, jsonData, 5*time.Minute)
+
 		c.JSON(http.StatusOK, items)
 	}
 }
 
-// ADMIN
 func AdminListAchievements() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var items []models.Achievement
@@ -38,6 +56,7 @@ func CreateAchievement() gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "create error"})
 			return
 		}
+		invalidateAchievementCache()
 		c.JSON(http.StatusCreated, item)
 	}
 }
@@ -58,6 +77,7 @@ func UpdateAchievement() gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "update error"})
 			return
 		}
+		invalidateAchievementCache()
 		c.JSON(http.StatusOK, item)
 	}
 }
@@ -69,6 +89,7 @@ func DeleteAchievement() gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "delete error"})
 			return
 		}
+		invalidateAchievementCache()
 		c.JSON(http.StatusOK, gin.H{"ok": true})
 	}
 }
@@ -104,6 +125,7 @@ func ReorderAchievements() gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "commit error"})
 			return
 		}
+		invalidateAchievementCache()
 		c.JSON(http.StatusOK, gin.H{"ok": true})
 	}
 }

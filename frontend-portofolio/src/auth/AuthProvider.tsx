@@ -13,11 +13,6 @@ interface LoginCredentials {
 
 interface LoginResponse {
     access_token?: string
-    token?: string
-    jwt?: string
-    data?: {
-        access_token?: string
-    }
 }
 
 export default function AuthProvider({ children }: AuthProviderProps) {
@@ -30,7 +25,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
 
     const login = async ({ email, password }: LoginCredentials): Promise<boolean> => {
         const { data } = await api.post<LoginResponse>('/api/auth/login', { email, password })
-        const t = data?.access_token || data?.token || data?.jwt || data?.data?.access_token
+        const t = data?.access_token
         if (!t) throw new Error('Token tidak ditemukan pada respons login')
         setToken(t)
         return true

@@ -1,4 +1,3 @@
-//internal/config/config.go
 package config
 
 import "os"
@@ -10,12 +9,13 @@ type Config struct {
 	DBUser        string
 	DBPassword    string
 	DBName        string
+	DBSSLMode     string
 	JWTSecret     string
 	AdminEmail    string
 	AdminPassword string
 	CORSOrigins   string
-	UploadDir     string
 	CloudinaryURL string
+	RedisURL      string
 }
 
 func getenv(k, def string) string {
@@ -33,11 +33,12 @@ func Load() Config {
 		DBUser:        getenv("DB_USER", "postgres"),
 		DBPassword:    getenv("DB_PASSWORD", "postgres"),
 		DBName:        getenv("DB_NAME", "portfolio"),
+		DBSSLMode:     getenv("DB_SSL_MODE", "disable"),
 		JWTSecret:     getenv("JWT_SECRET", "devsecret"),
 		AdminEmail:    getenv("ADMIN_EMAIL", ""),
 		AdminPassword: getenv("ADMIN_PASSWORD", ""),
 		CORSOrigins:   getenv("CORS_ORIGINS", "http://localhost:5173"),
-		UploadDir:     getenv("UPLOAD_DIR", "/app/storage/uploads"),
 		CloudinaryURL: getenv("CLOUDINARY_URL", ""),
+		RedisURL:      getenv("REDIS_URL", "redis://redis:6379/0"),
 	}
 }

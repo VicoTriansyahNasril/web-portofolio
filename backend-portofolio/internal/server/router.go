@@ -1,23 +1,54 @@
-// portofolio/backend-portofolio/internal/server/router.go
 package server
 
 import (
+	"log"
+	"net/http"
 	"time"
 
 	"backend-portofolio/internal/config"
 	"backend-portofolio/internal/handlers"
 	"backend-portofolio/internal/middleware"
+	"backend-portofolio/internal/websocket"
 
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
+	gows "github.com/gorilla/websocket"
 )
+
+var upgrader = gows.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
+}
+
+func wsHandler(c *gin.Context) {
+	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+	if err != nil {
+		log.Printf("Failed to set websocket upgrade: %+v", err)
+		return
+	}
+	hub := websocket.GetHub()
+	hub.RegisterClient(conn)
+
+	defer func() {
+		hub.UnregisterClient(conn)
+	}()
+
+	for {
+		if _, _, err := conn.NextReader(); err != nil {
+			break
+		}
+	}
+}
 
 func SetupRouter(cfg *config.Config) *gin.Engine {
 	r := gin.Default()
 	r.Use(middleware.CORSMiddleware(cfg.CORSOrigins))
 	r.Use(gzip.Gzip(gzip.DefaultCompression))
 
-	r.Static("/uploads", cfg.UploadDir)
+	r.GET("/ws", wsHandler)
 
 	publicAPI := r.Group("/api")
 	publicAPI.Use(middleware.CacheControl(5 * time.Minute))
@@ -25,7 +56,6 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 		publicAPI.GET("/projects", handlers.ListPublicProjects())
 		publicAPI.GET("/projects/:slug", handlers.GetProjectBySlug())
 		publicAPI.GET("/profile", handlers.GetProfilePublic())
-		publicAPI.HEAD("/profile", handlers.GetProfilePublic())
 		publicAPI.GET("/skills", handlers.GetSkillsPublic())
 		publicAPI.GET("/experiences", handlers.ListPublicExperiences())
 		publicAPI.GET("/achievements", handlers.ListPublicAchievements())
@@ -42,7 +72,7 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 		admin.DELETE("/projects/:id", handlers.DeleteProject())
 		admin.POST("/projects/reorder", handlers.ReorderProjects())
 
-		admin.POST("/upload", handlers.UploadHandler(cfg.CloudinaryURL))
+		admin.GET("/upload/signature", handlers.GetUploadSignatureHandler(cfg.CloudinaryURL))
 		admin.PUT("/profile", handlers.UpsertProfile())
 
 		admin.GET("/skills", handlers.AdminListSkills())
@@ -61,6 +91,7 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 		admin.PUT("/achievements/:id", handlers.UpdateAchievement())
 		admin.DELETE("/achievements/:id", handlers.DeleteAchievement())
 		admin.POST("/achievements/reorder", handlers.ReorderAchievements())
+
 		admin.GET("/analytics/visitors", handlers.GetVisitorsSummary())
 		admin.GET("/analytics/visitors/:visitorHash", handlers.GetVisitorDetail())
 	}

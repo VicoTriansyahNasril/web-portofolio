@@ -37,6 +37,10 @@ export default function About() {
 
     const loading = profileLoading || skillsLoading || expLoading || achLoading;
 
+    const safeAchievements = Array.isArray(achievements) ? achievements : [];
+    const safeExperiences = Array.isArray(experiences) ? experiences : [];
+    const safeSkills = Array.isArray(skills) ? skills : [];
+
     if (loading) {
         return (
             <Box sx={{ display: 'grid', placeItems: 'center', minHeight: '60vh' }}>
@@ -103,7 +107,7 @@ export default function About() {
                 </Paper>
             </motion.div>
 
-            {(experiences || []).length > 0 && (
+            {safeExperiences.length > 0 && (
                 <motion.div
                     variants={staggerContainer}
                     initial="hidden"
@@ -134,12 +138,12 @@ export default function About() {
                                 Pengalaman
                             </Typography>
                         </motion.div>
-                        <ExperienceTimeline experiences={experiences || []} />
+                        <ExperienceTimeline experiences={safeExperiences} />
                     </Box>
                 </motion.div>
             )}
 
-            {(skills || []).length > 0 && (
+            {safeSkills.length > 0 && (
                 <motion.div
                     variants={staggerContainer}
                     initial="hidden"
@@ -170,12 +174,12 @@ export default function About() {
                                 Keahlian
                             </Typography>
                         </motion.div>
-                        <SkillChips skills={skills || []} />
+                        <SkillChips skills={safeSkills} />
                     </Box>
                 </motion.div>
             )}
 
-            {(achievements || []).length > 0 && (
+            {safeAchievements.length > 0 && (
                 <motion.div
                     variants={staggerContainer}
                     initial="hidden"
@@ -218,7 +222,7 @@ export default function About() {
                                 mt: 2
                             }}
                         >
-                            {(achievements || []).map((ach, index) => (
+                            {safeAchievements.map((ach, index) => (
                                 <motion.div
                                     key={ach.id}
                                     variants={sectionVariants}

@@ -1,4 +1,4 @@
-import { useState, useEffect, MouseEvent } from 'react'
+import { useEffect, useState, ChangeEvent, MouseEvent } from 'react'
 import { Social } from '../../types'
 
 interface SocialLinksManagerProps {
@@ -16,35 +16,40 @@ const socialPlatforms = [
     { name: 'Facebook', icon: 'facebook', placeholder: 'https://facebook.com/username' },
     { name: 'YouTube', icon: 'youtube', placeholder: 'https://youtube.com/@username' },
     { name: 'Portfolio', icon: 'globe', placeholder: 'https://yourwebsite.com' },
-    { name: 'Email', icon: 'mail', placeholder: 'your@email.com' },
+    { name: 'Email', icon: 'mail', placeholder: 'mailto:your@email.com' },
 ]
 
 export default function SocialLinksManager({ links, onUpdate, onSubmit, isSubmitting }: SocialLinksManagerProps) {
-    const [socialLinks, setSocialLinks] = useState<Social[]>(links)
+    const [internalLinks, setInternalLinks] = useState<Social[]>([])
 
     useEffect(() => {
-        setSocialLinks(links);
+        const mergedLinks = socialPlatforms.map(platform => {
+            const existingLink = links.find(l => l.name === platform.name);
+            return existingLink ? { ...existingLink } : {
+                id: 0,
+                name: platform.name,
+                url: '',
+                icon: platform.icon,
+                active: false,
+            };
+        });
+        setInternalLinks(mergedLinks);
     }, [links]);
 
-    const handleChange = (name: string, url: string) => {
-        const newLinks = [...socialLinks];
-        const existingIndex = newLinks.findIndex((link) => link.name === name);
-        if (existingIndex > -1) {
-            newLinks[existingIndex] = { ...newLinks[existingIndex], url: url, active: url.length > 0 };
-        } else {
-            const platform = socialPlatforms.find(p => p.name === name);
-            newLinks.push({ name, url, id: 0, icon: platform?.icon || '', active: url.length > 0 });
-        }
-        onUpdate(newLinks);
+    const handleChange = (e: ChangeEvent<HTMLInputElement>, name: string) => {
+        const newUrl = e.target.value;
+        const updatedLinks = internalLinks.map(link => {
+            if (link.name === name) {
+                return { ...link, url: newUrl, active: newUrl.length > 0 };
+            }
+            return link;
+        });
+        onUpdate(updatedLinks);
     }
 
     const handleSubmit = (e: MouseEvent<HTMLButtonElement>) => {
         e.preventDefault()
         onSubmit()
-    }
-
-    const getLinkValue = (name: string): string => {
-        return socialLinks.find((link) => link.name === name)?.url || ''
     }
 
     return (
@@ -59,20 +64,23 @@ export default function SocialLinksManager({ links, onUpdate, onSubmit, isSubmit
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {socialPlatforms.map((platform) => (
-                    <div key={platform.name}>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            {platform.name}
-                        </label>
-                        <input
-                            type={platform.icon === 'mail' ? 'email' : 'url'}
-                            value={getLinkValue(platform.name)}
-                            onChange={(e) => handleChange(platform.name, e.target.value)}
-                            className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-                            placeholder={platform.placeholder}
-                        />
-                    </div>
-                ))}
+                {internalLinks.map((link) => {
+                    const platform = socialPlatforms.find(p => p.name === link.name);
+                    return (
+                        <div key={link.name}>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                {link.name}
+                            </label>
+                            <input
+                                type={link.icon === 'mail' ? 'email' : 'url'}
+                                value={link.url}
+                                onChange={(e) => handleChange(e, link.name)}
+                                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                                placeholder={platform?.placeholder}
+                            />
+                        </div>
+                    )
+                })}
             </div>
 
             <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-700">

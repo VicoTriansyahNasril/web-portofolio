@@ -3,15 +3,41 @@ import { motion } from 'framer-motion';
 import LocationOnRoundedIcon from '@mui/icons-material/LocationOnRounded';
 import FileDownloadRoundedIcon from '@mui/icons-material/FileDownloadRounded';
 import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
+import GitHubIcon from '@mui/icons-material/GitHub';
+import LinkedInIcon from '@mui/icons-material/LinkedIn';
+import InstagramIcon from '@mui/icons-material/Instagram';
+import TwitterIcon from '@mui/icons-material/Twitter';
+import FacebookIcon from '@mui/icons-material/Facebook';
+import YouTubeIcon from '@mui/icons-material/YouTube';
+import LanguageIcon from '@mui/icons-material/Language';
+import EmailIcon from '@mui/icons-material/Email';
 import { transformedFileUrl } from '@/utils/url';
 import type { Profile } from '@/types';
+import React from 'react';
 
 interface ProfileHeaderProps {
     profile: Profile | null;
 }
 
+const socialIconMap: { [key: string]: React.ReactElement } = {
+    'github': <GitHubIcon />,
+    'linkedin': <LinkedInIcon />,
+    'instagram': <InstagramIcon />,
+    'twitter': <TwitterIcon />,
+    'facebook': <FacebookIcon />,
+    'youtube': <YouTubeIcon />,
+    'portfolio': <LanguageIcon />,
+    'globe': <LanguageIcon />,
+    'email': <EmailIcon />,
+    'mail': <EmailIcon />,
+};
+
 export default function ProfileHeader({ profile }: ProfileHeaderProps) {
     if (!profile) return null;
+
+    const getSocialIcon = (iconName: string) => {
+        return socialIconMap[iconName.toLowerCase()] || <LaunchRoundedIcon />;
+    };
 
     return (
         <motion.div
@@ -108,9 +134,10 @@ export default function ProfileHeader({ profile }: ProfileHeaderProps) {
                                     }}
                                 />
                             )}
-                            {(profile.socials || []).map((s) => (
+                            {(profile.socials || []).filter(s => s.active).map((s, index) => (
                                 <Chip
-                                    key={s.id || s.url}
+                                    key={`${s.name}-${index}`}
+                                    icon={getSocialIcon(s.icon)}
                                     size="medium"
                                     clickable
                                     component="a"
@@ -127,7 +154,7 @@ export default function ProfileHeader({ profile }: ProfileHeaderProps) {
                                         '&:hover': {
                                             bgcolor: 'primary.main',
                                             color: 'primary.contrastText',
-                                            '& .MuiChip-deleteIcon': {
+                                            '& .MuiChip-deleteIcon, & .MuiChip-icon': {
                                                 color: 'primary.contrastText',
                                             },
                                         },

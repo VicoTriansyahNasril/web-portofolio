@@ -1,13 +1,43 @@
-// internal/handlers/profile_handler.go
 package handlers
 
 import (
-	"net/http"
-
+	"backend-portofolio/internal/cache"
 	"backend-portofolio/internal/db"
 	"backend-portofolio/internal/models"
+	"backend-portofolio/internal/websocket"
+	"encoding/json"
+	"net/http"
+	"time"
+
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
+
+const publicProfileCacheKey = "public_profile"
+
+func invalidateProfileCache() {
+	cache.DelByPattern(publicProfileCacheKey + "*")
+	hub := websocket.GetHub()
+	hub.BroadcastEvent("change", "/api/profile")
+}
+
+func GetProfilePublic() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		cached, err := cache.Get(publicProfileCacheKey)
+		if err == nil {
+			c.Header("Content-Type", "application/json; charset=utf-8")
+			c.String(http.StatusOK, cached)
+			return
+		}
+
+		var p models.Profile
+		db.Conn.Preload("Socials").First(&p)
+
+		jsonData, _ := json.Marshal(p)
+		cache.Set(publicProfileCacheKey, jsonData, 5*time.Minute)
+		c.JSON(http.StatusOK, p)
+	}
+}
 
 type upsertProfileReq struct {
 	FullName        string              `json:"full_name"`
@@ -20,19 +50,6 @@ type upsertProfileReq struct {
 	Socials         []models.SocialLink `json:"socials"`
 }
 
-// PUBLIC
-func GetProfilePublic() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		var p models.Profile
-		if err := db.Conn.Preload("Socials", "active = ?", true).First(&p).Error; err != nil {
-			c.JSON(http.StatusOK, gin.H{"profile": nil})
-			return
-		}
-		c.JSON(http.StatusOK, p)
-	}
-}
-
-// ADMIN (singleton upsert)
 func UpsertProfile() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req upsertProfileReq
@@ -41,8 +58,15 @@ func UpsertProfile() gin.HandlerFunc {
 			return
 		}
 
+		tx := db.Conn.Begin()
+
 		var p models.Profile
-		db.Conn.First(&p)
+		err := tx.First(&p).Error
+		if err != nil && err != gorm.ErrRecordNotFound {
+			tx.Rollback()
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "database error on finding profile"})
+			return
+		}
 
 		p.FullName = req.FullName
 		p.Headline = req.Headline
@@ -52,25 +76,36 @@ func UpsertProfile() gin.HandlerFunc {
 		p.ResumeURL = req.ResumeURL
 		p.SkillGroupOrder = req.SkillGroupOrder
 
-		if p.ID == 0 {
-			if err := db.Conn.Create(&p).Error; err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "create error"})
-				return
+		if err := tx.Save(&p).Error; err != nil {
+			tx.Rollback()
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "save profile error"})
+			return
+		}
+
+		if err := tx.Where("profile_id = ?", p.ID).Delete(&models.SocialLink{}).Error; err != nil {
+			tx.Rollback()
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "delete social links error"})
+			return
+		}
+
+		if len(req.Socials) > 0 {
+			for i := range req.Socials {
+				req.Socials[i].ProfileID = p.ID
 			}
-		} else {
-			if err := db.Conn.Save(&p).Error; err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "save error"})
+			if err := tx.Create(&req.Socials).Error; err != nil {
+				tx.Rollback()
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "create social links error"})
 				return
 			}
 		}
 
-		db.Conn.Where("profile_id = ?", p.ID).Delete(&models.SocialLink{})
-		for _, s := range req.Socials {
-			s.ProfileID = p.ID
-			db.Conn.Create(&s)
+		if err := tx.Commit().Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "commit error"})
+			return
 		}
 
 		db.Conn.Preload("Socials").First(&p, p.ID)
+		invalidateProfileCache()
 		c.JSON(http.StatusOK, p)
 	}
 }

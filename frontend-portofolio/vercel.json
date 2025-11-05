@@ -5,6 +5,10 @@
             "destination": "https://web-portofolio-p2rn.onrender.com/api/:path*"
         },
         {
+            "source": "/ws",
+            "destination": "https://web-portofolio-p2rn.onrender.com/ws"
+        },
+        {
             "source": "/(.*)",
             "destination": "/index.html"
         }

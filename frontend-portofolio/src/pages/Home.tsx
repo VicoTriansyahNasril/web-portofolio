@@ -1,13 +1,12 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { Box, Stack, Typography, Paper, CircularProgress, Chip, IconButton, Button, Container } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 import { motion, Variants } from 'framer-motion';
-import { fetchPublicProfile } from '@/api/profile';
-import { fetchPublicSkills } from '@/api/skills';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import LinkedInIcon from '@mui/icons-material/LinkedIn';
 import Footer from '@/components/layout/Footer';
+import { usePublicData } from '@/hooks/usePublicData';
 import type { Profile, Skill } from '@/types';
 
 const itemVariants: Variants = {
@@ -40,28 +39,18 @@ const chipVariants: Variants = {
 };
 
 export default function Home() {
-    const [profile, setProfile] = useState<Profile | null>(null);
-    const [skills, setSkills] = useState<Skill[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { data: profile, isLoading: profileLoading } = usePublicData<Profile>('/api/profile');
+    const { data: skills, isLoading: skillsLoading } = usePublicData<Skill[]>('/api/skills');
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const [profileData, skillsData] = await Promise.all([fetchPublicProfile(), fetchPublicSkills()]);
-                setProfile(profileData);
-                setSkills(skillsData);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchData();
-    }, []);
+    const loading = profileLoading || skillsLoading;
 
     const socialLinks = useMemo(() => {
         const github = profile?.socials?.find((s) => s.name.toLowerCase() === 'github');
         const linkedin = profile?.socials?.find((s) => s.name.toLowerCase() === 'linkedin');
         return { github, linkedin };
     }, [profile]);
+
+    const safeSkills = Array.isArray(skills) ? skills : [];
 
     if (loading) {
         return (
@@ -217,7 +206,7 @@ export default function Home() {
                                     animate="visible"
                                 >
                                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                                        {skills.slice(0, 8).map((skill, index) => (
+                                        {safeSkills.slice(0, 8).map((skill, index) => (
                                             <motion.div
                                                 key={skill.id}
                                                 variants={chipVariants}

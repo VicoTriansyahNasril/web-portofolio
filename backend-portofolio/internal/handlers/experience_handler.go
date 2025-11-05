@@ -1,13 +1,21 @@
-// internal/handlers/experience_handler.go
 package handlers
 
 import (
+	"backend-portofolio/internal/cache"
 	"backend-portofolio/internal/db"
 	"backend-portofolio/internal/models"
-	"github.com/gin-gonic/gin"
+	"backend-portofolio/internal/websocket"
+	"encoding/json"
 	"net/http"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
+
+func invalidateExperienceCache() {
+	cache.DelByPattern("public_experiences*")
+	websocket.GetHub().BroadcastEvent("change", "/api/experiences")
+}
 
 type experiencePayload struct {
 	Type        string  `json:"type" binding:"required"`
@@ -20,16 +28,26 @@ type experiencePayload struct {
 	SortOrder   int     `json:"sort_order"`
 }
 
-// PUBLIC
 func ListPublicExperiences() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var items []models.Experience
+		const cacheKey = "public_experiences"
+		cached, err := cache.Get(cacheKey)
+		if err == nil {
+			c.Header("Content-Type", "application/json; charset=utf-8")
+			c.String(http.StatusOK, cached)
+			return
+		}
+
+		items := make([]models.Experience, 0)
 		db.Conn.Order("sort_order asc, start_date desc").Find(&items)
+
+		jsonData, _ := json.Marshal(items)
+		cache.Set(cacheKey, jsonData, 5*time.Minute)
+
 		c.JSON(http.StatusOK, items)
 	}
 }
 
-// ADMIN
 func AdminListExperiences() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var items []models.Experience
@@ -77,6 +95,7 @@ func CreateExperience() gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "create error: " + err.Error()})
 			return
 		}
+		invalidateExperienceCache()
 		c.JSON(http.StatusCreated, item)
 	}
 }
@@ -129,6 +148,7 @@ func UpdateExperience() gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "update error: " + err.Error()})
 			return
 		}
+		invalidateExperienceCache()
 		c.JSON(http.StatusOK, item)
 	}
 }
@@ -140,6 +160,7 @@ func DeleteExperience() gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "delete error"})
 			return
 		}
+		invalidateExperienceCache()
 		c.JSON(http.StatusOK, gin.H{"ok": true})
 	}
 }
