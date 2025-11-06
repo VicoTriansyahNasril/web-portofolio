@@ -132,7 +132,7 @@ export default function ProjectForm({ initialData, onSubmit, onCancel }: Project
                     className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all resize-none"
                     placeholder="Brief description for card preview..."
                 />
-                <p className="mt-1 text-xs text-gray-500">{summary.length}/200 characters</p>
+                <p className="mt-1 text-xs text-gray-500">{summary.length}/1000 characters</p>
             </div>
 
             <div>
