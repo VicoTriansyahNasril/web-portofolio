@@ -86,7 +86,7 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 	r.Use(middleware.CORSMiddleware(cfg.CORSOrigins))
 	r.Use(gzip.Gzip(gzip.DefaultCompression))
 
-	r.GET("/health", healthCheck)
+	r.Match([]string{"GET", "HEAD"}, "/health", healthCheck)
 	r.GET("/ws", wsHandler)
 
 	api := r.Group("/api")
