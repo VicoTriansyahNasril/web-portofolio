@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"net/http"
 	"time"
 
@@ -18,9 +19,7 @@ import (
 var upgrader = gows.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
-	CheckOrigin: func(r *http.Request) bool {
-		return true
-	},
+	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
 func wsHandler(c *gin.Context) {
@@ -31,7 +30,6 @@ func wsHandler(c *gin.Context) {
 	hub := websocket.GetHub()
 	hub.RegisterClient(conn)
 	defer hub.UnregisterClient(conn)
-
 	for {
 		if _, _, err := conn.NextReader(); err != nil {
 			break
@@ -40,35 +38,66 @@ func wsHandler(c *gin.Context) {
 }
 
 func healthCheck(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
+	defer cancel()
+
+	status := "active"
+	dbStatus := "connected"
+
 	sqlDB, err := db.Conn.DB()
 	if err != nil {
-		c.JSON(500, gin.H{"status": "error"})
-		return
+		status = "error"
+		dbStatus = "unavailable"
+	} else {
+		errCh := make(chan error, 1)
+		go func() { errCh <- sqlDB.Ping() }()
+
+		select {
+		case err := <-errCh:
+			if err != nil {
+				status = "degraded"
+				dbStatus = "disconnected"
+			}
+		case <-ctx.Done():
+			status = "degraded"
+			dbStatus = "timeout"
+		}
 	}
-	if err := sqlDB.Ping(); err != nil {
-		c.JSON(503, gin.H{"status": "disconnected"})
-		return
+
+	code := http.StatusOK
+	if status != "active" {
+		code = http.StatusServiceUnavailable
 	}
-	c.JSON(200, gin.H{"status": "active", "db": "connected"})
+
+	c.JSON(code, gin.H{
+		"status":    status,
+		"database":  dbStatus,
+		"timestamp": time.Now().Format(time.RFC3339),
+	})
 }
 
 func SetupRouter(cfg *config.Config) *gin.Engine {
-	r := gin.Default()
+	gin.SetMode(gin.ReleaseMode)
+
+	r := gin.New()
+	r.Use(gin.Recovery())
+	r.Use(gin.Logger())
+
 	r.Use(middleware.CORSMiddleware(cfg.CORSOrigins))
 	r.Use(gzip.Gzip(gzip.DefaultCompression))
 
 	r.GET("/health", healthCheck)
 	r.GET("/ws", wsHandler)
 
-	publicAPI := r.Group("/api")
-	publicAPI.Use(middleware.CacheControl(5 * time.Minute))
+	api := r.Group("/api")
+	api.Use(middleware.CacheControl(5 * time.Minute))
 	{
-		publicAPI.GET("/projects", handlers.ListPublicProjects())
-		publicAPI.GET("/projects/:slug", handlers.GetProjectBySlug())
-		publicAPI.GET("/profile", handlers.GetProfilePublic())
-		publicAPI.GET("/skills", handlers.GetSkillsPublic())
-		publicAPI.GET("/experiences", handlers.ListPublicExperiences())
-		publicAPI.GET("/achievements", handlers.ListPublicAchievements())
+		api.GET("/projects", handlers.ListPublicProjects())
+		api.GET("/projects/:slug", handlers.GetProjectBySlug())
+		api.GET("/profile", handlers.GetProfilePublic())
+		api.GET("/skills", handlers.GetSkillsPublic())
+		api.GET("/experiences", handlers.ListPublicExperiences())
+		api.GET("/achievements", handlers.ListPublicAchievements())
 	}
 
 	r.POST("/api/track", handlers.TrackVisit())

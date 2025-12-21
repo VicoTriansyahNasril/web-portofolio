@@ -23,18 +23,24 @@ func Init(cfg config.Config) {
 	for i := 0; i < 10; i++ {
 		Conn, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
 			SkipDefaultTransaction: true,
-			Logger:                 logger.Default.LogMode(logger.Error),
 			PrepareStmt:            false,
+			Logger:                 logger.Default.LogMode(logger.Silent),
 		})
+
 		if err == nil {
-			break
+			db, _ := Conn.DB()
+			if errPing := db.Ping(); errPing == nil {
+				log.Printf("Database connection established on attempt %d", i+1)
+				break
+			}
 		}
-		log.Printf("Waiting for Supabase to wake up... (%d/10)", i+1)
+
+		log.Printf("Database not ready, retrying in 8s... (%d/10)", i+1)
 		time.Sleep(8 * time.Second)
 	}
 
 	if err != nil {
-		log.Fatalf("Critical Error: Database unreachable: %v", err)
+		log.Fatalf("Critical: Could not connect to database: %v", err)
 	}
 
 	sqlDB, err := Conn.DB()
@@ -42,12 +48,12 @@ func Init(cfg config.Config) {
 		log.Fatal(err)
 	}
 
-	sqlDB.SetMaxOpenConns(5)
+	sqlDB.SetMaxOpenConns(4)
 	sqlDB.SetMaxIdleConns(2)
-	sqlDB.SetConnMaxLifetime(15 * time.Minute)
-	sqlDB.SetConnMaxIdleTime(5 * time.Minute)
+	sqlDB.SetConnMaxLifetime(5 * time.Minute)
+	sqlDB.SetConnMaxIdleTime(2 * time.Minute)
 
-	err = Conn.AutoMigrate(
+	Conn.AutoMigrate(
 		&models.Project{},
 		&models.Profile{},
 		&models.SocialLink{},
@@ -56,7 +62,4 @@ func Init(cfg config.Config) {
 		&models.Achievement{},
 		&models.PageVisit{},
 	)
-	if err != nil {
-		log.Printf("Migration notice: %v", err)
-	}
 }
