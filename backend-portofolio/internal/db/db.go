@@ -16,34 +16,36 @@ import (
 var Conn *gorm.DB
 
 func Init(cfg config.Config) {
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s statement_cache_mode=describe",
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s TimeZone=Asia/Jakarta",
 		cfg.DBHost, cfg.DBUser, cfg.DBPassword, cfg.DBName, cfg.DBPort, cfg.DBSSLMode)
 
 	var err error
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 10; i++ {
 		Conn, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
 			SkipDefaultTransaction: true,
 			Logger:                 logger.Default.LogMode(logger.Error),
+			PrepareStmt:            false,
 		})
 		if err == nil {
 			break
 		}
-		log.Printf("DB connection failed, retrying... (%d/5)", i+1)
-		time.Sleep(5 * time.Second)
+		log.Printf("Waiting for Supabase to wake up... (%d/10)", i+1)
+		time.Sleep(8 * time.Second)
 	}
 
 	if err != nil {
-		log.Fatalf("Fatal: Database unreachable: %v\n", err)
+		log.Fatalf("Critical Error: Database unreachable: %v", err)
 	}
 
 	sqlDB, err := Conn.DB()
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	sqlDB.SetMaxOpenConns(5)
 	sqlDB.SetMaxIdleConns(2)
-	sqlDB.SetConnMaxLifetime(3 * time.Minute)
-	sqlDB.SetConnMaxIdleTime(1 * time.Minute)
+	sqlDB.SetConnMaxLifetime(15 * time.Minute)
+	sqlDB.SetConnMaxIdleTime(5 * time.Minute)
 
 	err = Conn.AutoMigrate(
 		&models.Project{},
@@ -55,6 +57,6 @@ func Init(cfg config.Config) {
 		&models.PageVisit{},
 	)
 	if err != nil {
-		log.Printf("Migration warning: %v\n", err)
+		log.Printf("Migration notice: %v", err)
 	}
 }

@@ -30,10 +30,7 @@ func wsHandler(c *gin.Context) {
 	}
 	hub := websocket.GetHub()
 	hub.RegisterClient(conn)
-
-	defer func() {
-		hub.UnregisterClient(conn)
-	}()
+	defer hub.UnregisterClient(conn)
 
 	for {
 		if _, _, err := conn.NextReader(); err != nil {
@@ -42,26 +39,25 @@ func wsHandler(c *gin.Context) {
 	}
 }
 
-func healthCheckHandler(c *gin.Context) {
+func healthCheck(c *gin.Context) {
 	sqlDB, err := db.Conn.DB()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"status": "unhealthy", "error": "no db connection"})
+		c.JSON(500, gin.H{"status": "error"})
 		return
 	}
-
 	if err := sqlDB.Ping(); err != nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"status": "unhealthy", "error": "db ping timeout"})
+		c.JSON(503, gin.H{"status": "disconnected"})
 		return
 	}
-
-	c.JSON(http.StatusOK, gin.H{"status": "healthy", "timestamp": time.Now().Unix()})
+	c.JSON(200, gin.H{"status": "active", "db": "connected"})
 }
 
 func SetupRouter(cfg *config.Config) *gin.Engine {
 	r := gin.Default()
 	r.Use(middleware.CORSMiddleware(cfg.CORSOrigins))
 	r.Use(gzip.Gzip(gzip.DefaultCompression))
-	r.GET("/health", healthCheckHandler)
+
+	r.GET("/health", healthCheck)
 	r.GET("/ws", wsHandler)
 
 	publicAPI := r.Group("/api")
