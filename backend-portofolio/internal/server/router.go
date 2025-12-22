@@ -38,35 +38,32 @@ func wsHandler(c *gin.Context) {
 }
 
 func healthCheck(c *gin.Context) {
-	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
-	defer cancel()
+	status := "initializing"
+	dbStatus := "connecting"
+	code := http.StatusServiceUnavailable
 
-	status := "active"
-	dbStatus := "connected"
+	if db.IsConnected() {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
 
-	sqlDB, err := db.Conn.DB()
-	if err != nil {
-		status = "error"
-		dbStatus = "unavailable"
-	} else {
+		sqlDB, _ := db.Conn.DB()
 		errCh := make(chan error, 1)
 		go func() { errCh <- sqlDB.Ping() }()
 
 		select {
 		case err := <-errCh:
-			if err != nil {
+			if err == nil {
+				status = "active"
+				dbStatus = "connected"
+				code = http.StatusOK
+			} else {
 				status = "degraded"
-				dbStatus = "disconnected"
+				dbStatus = "error"
 			}
 		case <-ctx.Done():
 			status = "degraded"
 			dbStatus = "timeout"
 		}
-	}
-
-	code := http.StatusOK
-	if status != "active" {
-		code = http.StatusServiceUnavailable
 	}
 
 	c.JSON(code, gin.H{
@@ -89,21 +86,23 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 	r.Match([]string{"GET", "HEAD"}, "/health", healthCheck)
 	r.GET("/ws", wsHandler)
 
-	api := r.Group("/api")
-	api.Use(middleware.CacheControl(5 * time.Minute))
+	publicAPI := r.Group("/api")
+	publicAPI.Use(middleware.RequireDB())
+	publicAPI.Use(middleware.CacheControl(5 * time.Minute))
 	{
-		api.GET("/projects", handlers.ListPublicProjects())
-		api.GET("/projects/:slug", handlers.GetProjectBySlug())
-		api.GET("/profile", handlers.GetProfilePublic())
-		api.GET("/skills", handlers.GetSkillsPublic())
-		api.GET("/experiences", handlers.ListPublicExperiences())
-		api.GET("/achievements", handlers.ListPublicAchievements())
+		publicAPI.GET("/projects", handlers.ListPublicProjects())
+		publicAPI.GET("/projects/:slug", handlers.GetProjectBySlug())
+		publicAPI.GET("/profile", handlers.GetProfilePublic())
+		publicAPI.GET("/skills", handlers.GetSkillsPublic())
+		publicAPI.GET("/experiences", handlers.ListPublicExperiences())
+		publicAPI.GET("/achievements", handlers.ListPublicAchievements())
 	}
 
 	r.POST("/api/track", handlers.TrackVisit())
 	r.POST("/api/auth/login", handlers.LoginHandler(cfg.JWTSecret, cfg.AdminEmail, cfg.AdminPassword))
 
 	admin := r.Group("/api/admin", middleware.JWTAuth(cfg.JWTSecret))
+	admin.Use(middleware.RequireDB())
 	{
 		admin.GET("/projects", handlers.AdminListProjects())
 		admin.POST("/projects", handlers.CreateProject())
