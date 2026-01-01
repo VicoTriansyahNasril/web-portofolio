@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Typography, Box, CircularProgress, Chip, Stack } from '@mui/material'
+import { useEffect, useState } from 'react'
+import { Typography, Box, CircularProgress } from '@mui/material'
 import { motion, AnimatePresence, Variants } from 'framer-motion'
 import { fetchPublicProjects } from '../api/projects'
 import ProjectCard from '../components/public/ProjectCard'
@@ -13,7 +13,7 @@ const containerVariants: Variants = {
             staggerChildren: 0.1
         }
     }
-};
+}
 
 const itemVariants: Variants = {
     hidden: { y: 20, opacity: 0 },
@@ -26,35 +26,17 @@ const itemVariants: Variants = {
             damping: 12
         }
     }
-};
+}
 
 export default function Projects() {
     const [projects, setProjects] = useState<Project[]>([])
     const [loading, setLoading] = useState(true)
-    const [selectedFilter, setSelectedFilter] = useState<string>('all')
 
     useEffect(() => {
         fetchPublicProjects()
             .then(setProjects)
             .finally(() => setLoading(false))
     }, [])
-
-    const allTech = useMemo(() => {
-        const techSet = new Set<string>()
-        projects.forEach((p) => {
-            if (p.tech_stack) {
-                p.tech_stack.split(',').forEach((t) => techSet.add(t.trim()))
-            }
-        })
-        return Array.from(techSet).sort()
-    }, [projects])
-
-    const filteredProjects = useMemo(() => {
-        if (selectedFilter === 'all') return projects
-        return projects.filter((p) =>
-            p.tech_stack?.split(',').map((t) => t.trim()).includes(selectedFilter)
-        )
-    }, [projects, selectedFilter])
 
     if (loading) {
         return (
@@ -90,61 +72,10 @@ export default function Projects() {
                     variant="body1"
                     color="text.secondary"
                     textAlign="center"
-                    sx={{ mb: 4, maxWidth: 600, mx: 'auto' }}
+                    sx={{ mb: 6, maxWidth: 600, mx: 'auto' }}
                 >
                     Berikut adalah koleksi proyek yang telah saya kerjakan
                 </Typography>
-            </motion.div>
-
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-            >
-                <Stack
-                    direction="row"
-                    spacing={1}
-                    flexWrap="wrap"
-                    justifyContent="center"
-                    sx={{ mb: 4, gap: 1 }}
-                >
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                        <Chip
-                            label="All"
-                            clickable
-                            onClick={() => setSelectedFilter('all')}
-                            color={selectedFilter === 'all' ? 'primary' : 'default'}
-                            sx={{
-                                fontWeight: 600,
-                                transition: 'all 0.3s',
-                                ...(selectedFilter === 'all' && {
-                                    boxShadow: '0 4px 12px rgba(124, 58, 237, 0.3)'
-                                })
-                            }}
-                        />
-                    </motion.div>
-                    {allTech.slice(0, 10).map((tech) => (
-                        <motion.div
-                            key={tech}
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                        >
-                            <Chip
-                                label={tech}
-                                clickable
-                                onClick={() => setSelectedFilter(tech)}
-                                color={selectedFilter === tech ? 'primary' : 'default'}
-                                sx={{
-                                    fontWeight: 600,
-                                    transition: 'all 0.3s',
-                                    ...(selectedFilter === tech && {
-                                        boxShadow: '0 4px 12px rgba(124, 58, 237, 0.3)'
-                                    })
-                                }}
-                            />
-                        </motion.div>
-                    ))}
-                </Stack>
             </motion.div>
 
             <motion.div
@@ -164,7 +95,7 @@ export default function Projects() {
                             gap: 3
                         }}
                     >
-                        {filteredProjects.map((project, index) => (
+                        {projects.map((project, index) => (
                             <motion.div
                                 key={project.id}
                                 variants={itemVariants}
@@ -178,7 +109,7 @@ export default function Projects() {
                 </AnimatePresence>
             </motion.div>
 
-            {filteredProjects.length === 0 && (
+            {projects.length === 0 && (
                 <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -186,7 +117,7 @@ export default function Projects() {
                 >
                     <Box sx={{ textAlign: 'center', py: 8 }}>
                         <Typography variant="h6" color="text.secondary">
-                            Tidak ada proyek yang ditemukan dengan filter ini
+                            Belum ada proyek yang ditambahkan.
                         </Typography>
                     </Box>
                 </motion.div>
