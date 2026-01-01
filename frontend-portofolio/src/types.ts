@@ -33,6 +33,8 @@ export interface Project {
     status: 'draft' | 'published';
     is_featured: boolean;
     sort_order?: number;
+    start_date?: string | null;
+    end_date?: string | null;
     created_at: string;
     updated_at: string;
 }
