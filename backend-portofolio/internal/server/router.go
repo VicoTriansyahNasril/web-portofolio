@@ -105,6 +105,8 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 	admin.Use(middleware.RequireDB())
 	{
 		admin.GET("/projects", handlers.AdminListProjects())
+		admin.GET("/projects/:id", handlers.GetAdminProject())
+
 		admin.POST("/projects", handlers.CreateProject())
 		admin.PUT("/projects/:id", handlers.UpdateProject())
 		admin.DELETE("/projects/:id", handlers.DeleteProject())
