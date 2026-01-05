@@ -1,74 +1,88 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { createAdminProject, fetchAdminProjectById, updateAdminProject } from '../../api/projects'
-import ProjectForm from '../../components/admin/ProjectForm'
 import { Box, CircularProgress } from '@mui/material'
-import { Project } from '../../types'
+import ProjectForm from '@/features/projects/components/ProjectForm'
+import { projectAPI } from '@/features/projects/api/projectAPI'
+import { Project, CreateProjectDTO } from '@/features/projects/types'
+import { alert } from '@/utils/confirm'
 
-type Props = {
+interface ProjectEditProps {
     mode: 'create' | 'edit'
 }
 
-export default function ProjectEdit({ mode }: Props) {
-    const { id } = useParams<{ id: string }>();
-    const nav = useNavigate();
-    const isCreate = useMemo(() => mode === 'create', [mode]);
+export default function ProjectEdit({ mode }: ProjectEditProps) {
+    const { id } = useParams<{ id: string }>()
+    const navigate = useNavigate()
+    const isCreate = mode === 'create'
 
-    const [loading, setLoading] = useState<boolean>(!isCreate);
-    const [initialData, setInitialData] = useState<Partial<Project> | null>(null);
+    const [loading, setLoading] = useState(!isCreate)
+    const [initialData, setInitialData] = useState<Partial<Project> | null>(null)
 
     useEffect(() => {
-        if (isCreate || !id) {
-            setLoading(false);
-            setInitialData({});
-            return;
+        if (isCreate) {
+            setInitialData({})
+            setLoading(false)
+            return
+        }
+        if (!id) {
+            navigate('/admin/projects')
+            return
         }
 
-        let ok = true;
-        (async () => {
+        const fetchProject = async () => {
             try {
-                const data = await fetchAdminProjectById(parseInt(id, 10));
-                if (ok) {
-                    setInitialData(data);
+                const data = await projectAPI.getByIdAdmin(parseInt(id, 10))
+                if (data) {
+                    setInitialData(data)
+                } else {
+                    throw new Error('Project not found')
                 }
-            } catch {
-                if (ok) console.error("Failed to fetch project for editing");
+            } catch (error: any) {
+                console.error("Fetch error:", error)
+                if (error.response && error.response.status === 404) {
+                    alert({ title: 'Not Found', text: 'Project with this ID does not exist.', icon: 'warning' })
+                } else {
+                    alert({ title: 'Error', text: 'Failed to fetch project data.', icon: 'error' })
+                }
+                navigate('/admin/projects', { replace: true })
             } finally {
-                if (ok) setLoading(false);
+                setLoading(false)
             }
-        })();
+        }
 
-        return () => {
-            ok = false;
-        };
-    }, [id, isCreate]);
+        fetchProject()
+    }, [id, isCreate, navigate])
 
-    const handleSubmit = async (payload: Partial<Project>) => {
+    const handleSubmit = async (payload: any) => {
         try {
             if (isCreate) {
-                await createAdminProject(payload);
+                await projectAPI.create(payload as CreateProjectDTO)
             } else if (id) {
-                await updateAdminProject(parseInt(id, 10), payload);
+                await projectAPI.update(parseInt(id, 10), payload)
             }
-            nav('/admin/projects', { replace: true });
+            navigate('/admin/projects')
+            alert({ title: 'Success', text: 'Project saved successfully' })
         } catch (error) {
-            console.error("Failed to save project", error);
+            console.error(error)
+            alert({ title: 'Error', text: 'Failed to save project', icon: 'error' })
         }
-    };
+    }
 
     if (loading) {
         return (
-            <Box sx={{ display: 'grid', placeItems: 'center', py: 6 }}>
+            <Box sx={{ display: 'grid', placeItems: 'center', py: 6, minHeight: '60vh' }}>
                 <CircularProgress />
             </Box>
-        );
+        )
     }
+
+    if (!isCreate && !initialData) return null
 
     return (
         <ProjectForm
-            initialData={initialData || {}}
+            initialData={initialData}
             onSubmit={handleSubmit}
-            onCancel={() => nav('/admin/projects')}
+            onCancel={() => navigate('/admin/projects')}
         />
-    );
+    )
 }

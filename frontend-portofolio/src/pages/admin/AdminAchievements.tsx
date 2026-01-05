@@ -1,24 +1,20 @@
 import { useEffect, useState } from 'react'
-import { Box, Button, Paper, Stack, Typography, CircularProgress, IconButton, Alert } from '@mui/material'
+import { Box, Button, Paper, Stack, Typography, CircularProgress, IconButton } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import EditIcon from '@mui/icons-material/Edit'
 import DeleteIcon from '@mui/icons-material/Delete'
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator'
-import {
-    DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent,
-} from '@dnd-kit/core'
-import {
-    arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy,
-} from '@dnd-kit/sortable'
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core'
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { fetchAdminAchievements, createAdminAchievement, updateAdminAchievement, deleteAdminAchievement, reorderAdminAchievements } from '../../api/achievements'
-import { confirm, alert } from '../../utils/confirm'
-import AchievementFormModal from '../../components/admin/AchievementFormModal'
-import { Achievement } from '../../types'
+import { achievementAPI } from '@/features/achievements/api/achievementAPI'
+import { Achievement, AchievementDTO } from '@/features/achievements/types'
+import AchievementFormModal from '@/features/achievements/components/AchievementFormModal'
+import { confirm, alert } from '@/utils/confirm'
 
 const formatDate = (dateStr: string) => {
     try {
-        return new Date(dateStr).toLocaleDateString('id-ID', { year: 'numeric', month: 'long' })
+        return new Date(dateStr).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
     } catch {
         return dateStr
     }
@@ -31,14 +27,8 @@ interface SortableItemProps {
 }
 
 function SortableItem({ item, onEdit, onDelete }: SortableItemProps) {
-    const {
-        attributes, listeners, setNodeRef, transform, transition,
-    } = useSortable({ id: item.id })
-
-    const style = {
-        transform: CSS.Transform.toString(transform),
-        transition,
-    }
+    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: item.id })
+    const style = { transform: CSS.Transform.toString(transform), transition }
 
     return (
         <Paper ref={setNodeRef} style={style} sx={{ p: 2, display: 'flex', alignItems: 'center', touchAction: 'none' }}>
@@ -61,7 +51,6 @@ function SortableItem({ item, onEdit, onDelete }: SortableItemProps) {
 export default function AdminAchievements() {
     const [items, setItems] = useState<Achievement[]>([])
     const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [editingItem, setEditingItem] = useState<Achievement | null>(null)
 
@@ -72,13 +61,12 @@ export default function AdminAchievements() {
 
     const loadItems = async () => {
         setLoading(true)
-        setError(null)
         try {
-            const data = await fetchAdminAchievements()
+            const data = await achievementAPI.getAllAdmin()
             setItems(data)
         } catch (err) {
-            setError('Gagal memuat data pencapaian')
             console.error(err)
+            alert({ title: 'Error', text: 'Failed to load achievements.', icon: 'error' })
         } finally {
             setLoading(false)
         }
@@ -86,43 +74,41 @@ export default function AdminAchievements() {
 
     useEffect(() => { loadItems() }, [])
 
-    const handleOpenModal = (item: Achievement | null = null) => {
-        setEditingItem(item)
-        setIsModalOpen(true)
-    }
-
-    const handleCloseModal = () => {
-        setEditingItem(null)
-        setIsModalOpen(false)
-    }
-
     const handleDelete = async (item: Achievement) => {
-        const res = await confirm({ title: `Hapus "${item.title}"?` })
+        const res = await confirm({ title: `Delete "${item.title}"?` })
         if (res.isConfirmed) {
             try {
-                await deleteAdminAchievement(item.id)
-                alert({ title: 'Sukses', text: 'Data berhasil dihapus.' })
+                await achievementAPI.delete(item.id)
+                alert({ title: 'Success', text: 'Deleted successfully.' })
                 loadItems()
-            } catch (err) {
-                console.error(err)
-                alert({ title: 'Error', icon: 'error', text: 'Gagal menghapus data.' })
+            } catch {
+                alert({ title: 'Error', icon: 'error', text: 'Failed to delete.' })
             }
         }
     }
 
-    const handleSubmit = async (values: Partial<Omit<Achievement, 'id' | 'created_at' | 'updated_at'>>) => {
+    const handleSubmit = async (values: Partial<Achievement>) => {
+        const payload: Partial<AchievementDTO> = {
+            title: values.title,
+            issuer: values.issuer,
+            date: values.date,
+            description: values.description,
+            credential_url: values.credential_url,
+            link_text: values.link_text
+        }
+
         try {
             if (editingItem) {
-                await updateAdminAchievement(editingItem.id, values)
+                await achievementAPI.update(editingItem.id, payload)
             } else {
-                await createAdminAchievement(values)
+                await achievementAPI.create(payload)
             }
-            handleCloseModal()
-            alert({ title: 'Sukses', text: 'Data berhasil disimpan.' })
+            setIsModalOpen(false)
+            setEditingItem(null)
+            alert({ title: 'Success', text: 'Saved successfully.' })
             loadItems()
-        } catch (err) {
-            console.error(err)
-            alert({ title: 'Error', icon: 'error', text: 'Gagal menyimpan data. Pastikan semua field terisi dengan benar.' })
+        } catch {
+            alert({ title: 'Error', icon: 'error', text: 'Failed to save.' })
         }
     }
 
@@ -133,60 +119,42 @@ export default function AdminAchievements() {
             const newIndex = items.findIndex(item => item.id === over.id)
             const newOrder = arrayMove(items, oldIndex, newIndex)
             setItems(newOrder)
-
             try {
-                const payload = newOrder.map((item, index) => ({ id: item.id, sort_order: index }))
-                await reorderAdminAchievements(payload)
-            } catch (err) {
-                console.error(err)
-                alert({ title: 'Error', icon: 'error', text: 'Gagal menyimpan urutan baru.' })
+                await achievementAPI.reorder(newOrder.map((item, index) => ({ id: item.id, sort_order: index })))
+            } catch {
                 loadItems()
             }
         }
     }
 
-    if (loading) {
-        return (
-            <Box sx={{ display: 'grid', placeItems: 'center', minHeight: 400 }}>
-                <CircularProgress />
-            </Box>
-        )
-    }
+    if (loading) return <Box sx={{ display: 'grid', placeItems: 'center', minHeight: 400 }}><CircularProgress /></Box>
 
     return (
         <Box sx={{ maxWidth: 980, mx: 'auto' }}>
             <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
-                <Typography variant="h5" fontWeight={800}>Kelola Pencapaian</Typography>
-                <Button startIcon={<AddIcon />} variant="contained" onClick={() => handleOpenModal()}>
-                    Tambah
-                </Button>
+                <Typography variant="h5" fontWeight={800}>Manage Achievements</Typography>
+                <Button startIcon={<AddIcon />} variant="contained" onClick={() => { setEditingItem(null); setIsModalOpen(true) }}>Add</Button>
             </Stack>
 
-            {error && (
-                <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
-                    {error}
-                </Alert>
-            )}
-
-            {items.length === 0 ? (
+            {items.length === 0 && (
                 <Paper sx={{ p: 4, textAlign: 'center' }}>
                     <Typography variant="body1" color="text.secondary">
-                        Belum ada data pencapaian. Klik tombol "Tambah" untuk menambahkan data baru.
+                        No achievements found. Add your first achievement.
                     </Typography>
                 </Paper>
-            ) : (
-                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                    <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
-                        <Stack spacing={2}>
-                            {items.map(item => (
-                                <SortableItem key={item.id} item={item} onEdit={handleOpenModal} onDelete={handleDelete} />
-                            ))}
-                        </Stack>
-                    </SortableContext>
-                </DndContext>
             )}
 
-            <AchievementFormModal open={isModalOpen} onClose={handleCloseModal} onSubmit={handleSubmit} initialData={editingItem} />
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
+                    <Stack spacing={2}>
+                        {items.map(item => (
+                            <SortableItem key={item.id} item={item} onEdit={(i) => { setEditingItem(i); setIsModalOpen(true) }} onDelete={handleDelete} />
+                        ))}
+                    </Stack>
+                </SortableContext>
+            </DndContext>
+
+            <AchievementFormModal open={isModalOpen} onClose={() => setIsModalOpen(false)} onSubmit={handleSubmit} initialData={editingItem} />
         </Box>
     )
 }

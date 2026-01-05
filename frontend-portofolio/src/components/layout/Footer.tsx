@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
 import { Box, Container, Typography, Stack, Link } from '@mui/material';
 import { usePublicData } from '@/hooks/usePublicData';
-import type { Profile, Social } from '../../types';
+import type { Profile, SocialLink } from '@/features/profile/types';
 
 interface SocialLinks {
-    github: Social | null;
-    linkedin: Social | null;
+    github: SocialLink | null;
+    linkedin: SocialLink | null;
 }
 
 export default function Footer() {
@@ -21,7 +21,7 @@ export default function Footer() {
     }, [profile]);
 
     return (
-        <Box className="app-footer" component="footer" sx={{ py: 3, mt: 'auto' }}>
+        <Box component="footer" sx={{ py: 3, mt: 'auto', borderTop: '1px solid', borderColor: 'divider' }}>
             <Container maxWidth="lg">
                 <Stack
                     direction="row"
@@ -29,16 +29,16 @@ export default function Footer() {
                     alignItems="center"
                     spacing={1}
                     sx={{
-                        color: (t) => (t.palette.mode === 'dark' ? 'grey.500' : 'text.secondary'),
+                        color: 'text.secondary',
                         opacity: profile ? 1 : 0,
                         transition: 'opacity 0.3s ease-in-out',
                     }}
                 >
-                    <Typography variant="body2">© {new Date().getFullYear()} {profile?.full_name || 'Vico Triansyah Nasril'}</Typography>
+                    <Typography variant="body2">© {new Date().getFullYear()} {profile?.full_name || 'Portfolio'}</Typography>
                     {socialLinks.github && (
                         <>
                             <Typography variant="body2">·</Typography>
-                            <Link href={socialLinks.github.url} target="_blank" variant="body2" color="inherit">
+                            <Link href={socialLinks.github.url} target="_blank" variant="body2" color="inherit" underline="hover">
                                 GitHub
                             </Link>
                         </>
@@ -46,7 +46,7 @@ export default function Footer() {
                     {socialLinks.linkedin && (
                         <>
                             <Typography variant="body2">·</Typography>
-                            <Link href={socialLinks.linkedin.url} target="_blank" variant="body2" color="inherit">
+                            <Link href={socialLinks.linkedin.url} target="_blank" variant="body2" color="inherit" underline="hover">
                                 LinkedIn
                             </Link>
                         </>

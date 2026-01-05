@@ -1,6 +1,6 @@
 import { useEffect, useState, ReactNode } from 'react'
 import { AuthContext } from './authContext'
-import { api } from '../api/client'
+import { api } from '@/lib/axios'
 
 interface AuthProviderProps {
     children: ReactNode

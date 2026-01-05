@@ -1,67 +1,63 @@
 import { useState, useRef, DragEvent } from 'react'
-import { Box, Button, Chip, IconButton, Paper, Stack, Typography, Divider, CircularProgress, Alert } from '@mui/material'
+import { Box, Button, Chip, IconButton, Paper, Stack, Typography, CircularProgress, Alert } from '@mui/material'
+import { useNavigate } from 'react-router-dom'
 import EditIcon from '@mui/icons-material/Edit'
-import VisibilityIcon from '@mui/icons-material/Visibility'
 import DeleteIcon from '@mui/icons-material/Delete'
 import AddIcon from '@mui/icons-material/Add'
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator'
 import useSWR from 'swr'
-import { deleteAdminProject, createAdminProject, updateAdminProject, reorderAdminProjects } from '../../api/projects'
-import ProjectForm from '../../components/admin/ProjectForm'
-import ProjectPreview from '../../components/admin/ProjectPreview'
-import { alert, confirm } from '../../utils/confirm'
-import { Project } from '../../types'
-
-const PROJECTS_API_KEY = '/api/admin/projects'
+import { projectAPI } from '@/features/projects/api/projectAPI'
+import { Project } from '@/features/projects/types'
+import { alert, confirm } from '@/utils/confirm'
 
 export default function AdminProjects() {
-    const { data: items, error, isLoading, mutate } = useSWR<Project[]>(PROJECTS_API_KEY)
-    const [editing, setEditing] = useState(false)
-    const [initialData, setInitialData] = useState<Partial<Project>>({})
-    const [previewProject, setPreviewProject] = useState<Project | null>(null)
+    const navigate = useNavigate()
+    const { data: items, error, isLoading, mutate } = useSWR<Project[]>('/api/admin/projects', projectAPI.getAllAdmin)
+
     const [dragIdx, setDragIdx] = useState<number | null>(null)
     const [overIdx, setOverIdx] = useState<number | null>(null)
     const dragIndexRef = useRef<number | null>(null)
 
-    const handleNew = () => { setInitialData({}); setEditing(true); window.scrollTo({ top: 0, behavior: 'smooth' }) }
-    const handleEdit = (p: Project) => { setInitialData(p); setEditing(true); window.scrollTo({ top: 0, behavior: 'smooth' }) }
+    const handleNew = () => navigate('/admin/projects/new')
+    const handleEdit = (id: number) => navigate(`/admin/projects/${id}`)
 
     const handleDelete = async (id: number, title: string) => {
-        const res = await confirm({ title: `Hapus "${title}"?`, text: 'Aksi ini tidak bisa dibatalkan.' })
+        const res = await confirm({ title: `Delete "${title}"?`, text: 'This action cannot be undone.' })
         if (res.isConfirmed) {
             const optimisticData = items?.filter((p) => p.id !== id)
             await mutate(optimisticData, false)
             try {
-                await deleteAdminProject(id)
-                alert({ title: 'Sukses', text: 'Proyek berhasil dihapus.' })
-            } catch (_err) {
+                await projectAPI.delete(id)
+                alert({ title: 'Deleted', text: 'Project deleted successfully.' })
+                mutate()
+            } catch (err) {
+                console.error(err)
                 await mutate(items, false)
-                alert({ title: 'Error', text: 'Gagal menghapus proyek.', icon: 'error' })
+                alert({ title: 'Error', text: 'Failed to delete project.', icon: 'error' })
             }
         }
     }
 
-    const onSubmit = async (payload: Partial<Project>) => {
-        try {
-            if (initialData?.id) {
-                await updateAdminProject(initialData.id, payload)
-            } else {
-                await createAdminProject(payload)
-            }
-            setEditing(false); setInitialData({})
-            mutate()
-            alert({ title: 'Sukses', text: 'Proyek berhasil disimpan.' })
-        } catch (_err) {
-            alert({ title: 'Error', text: 'Gagal menyimpan proyek.', icon: 'error' })
-        }
+    const onRowDragStart = (e: DragEvent, idx: number) => {
+        dragIndexRef.current = idx
+        setDragIdx(idx)
+        e.dataTransfer.effectAllowed = 'move'
+        e.dataTransfer.setData('text/html', '')
     }
 
-    const onRowDragStart = (e: DragEvent, idx: number) => { dragIndexRef.current = idx; setDragIdx(idx); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/html', '') }
-    const onRowDragOver = (e: DragEvent, idx: number) => { e.preventDefault(); setOverIdx(idx) }
+    const onRowDragOver = (e: DragEvent, idx: number) => {
+        e.preventDefault()
+        setOverIdx(idx)
+    }
+
     const onRowDrop = async (e: DragEvent, idx: number) => {
         e.preventDefault()
-        const from = dragIndexRef.current; const to = idx
-        setOverIdx(null); setDragIdx(null); dragIndexRef.current = null
+        const from = dragIndexRef.current
+        const to = idx
+        setOverIdx(null)
+        setDragIdx(null)
+        dragIndexRef.current = null
+
         if (from === null || to === null || from === to || !items) return
 
         const originalOrder = [...items]
@@ -72,74 +68,93 @@ export default function AdminProjects() {
         await mutate(next, false)
         try {
             const reorderPayload = next.map((p, i) => ({ id: p.id, sort_order: i }))
-            await reorderAdminProjects(reorderPayload)
+            await projectAPI.reorder(reorderPayload)
         } catch {
-            alert({ title: 'Error', text: 'Gagal menyimpan urutan baru.', icon: 'error' })
+            alert({ title: 'Error', text: 'Failed to save order.', icon: 'error' })
             await mutate(originalOrder, false)
         }
     }
-    const onRowDragEnd = () => { setOverIdx(null); setDragIdx(null); dragIndexRef.current = null }
+
+    const onRowDragEnd = () => {
+        setOverIdx(null)
+        setDragIdx(null)
+        dragIndexRef.current = null
+    }
 
     if (isLoading) return <Box sx={{ display: 'grid', placeItems: 'center', minHeight: 400 }}><CircularProgress /></Box>
-    if (error) return <Alert severity="error">Gagal memuat data proyek.</Alert>
+    if (error) return <Alert severity="error">Failed to load projects.</Alert>
 
     return (
-        <Box sx={{ maxWidth: 980, mx: 'auto' }}>
-            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-                <Typography variant="h5" fontWeight={800}>Kelola Projects</Typography>
-                {!editing && <Button startIcon={<AddIcon />} variant="contained" onClick={handleNew}>Tambah Project</Button>}
+        <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
+            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 4 }}>
+                <Typography variant="h5" fontWeight={800}>Manage Projects</Typography>
+                <Button startIcon={<AddIcon />} variant="contained" onClick={handleNew}>
+                    New Project
+                </Button>
             </Stack>
 
-            {editing && (
-                <ProjectForm
-                    initialData={initialData}
-                    onSubmit={onSubmit}
-                    onCancel={() => { setEditing(false); setInitialData({}) }}
-                />
-            )}
-            {!editing && items && items.length > 0 && <Divider sx={{ my: 2 }} />}
+            <Stack spacing={2} sx={{
+                '& .row': { transition: 'transform .2s ease, box-shadow .2s ease' },
+                '& .row.dragging': { transform: 'scale(1.01)', boxShadow: 6, opacity: 0.9, cursor: 'grabbing', zIndex: 10 },
+                '& .row.over': { boxShadow: 4, borderColor: 'primary.main' },
+            }}>
+                {items?.map((p, idx) => (
+                    <Paper
+                        key={p.id}
+                        className={`row${dragIdx === idx ? ' dragging' : ''}${overIdx === idx ? ' over' : ''}`}
+                        draggable
+                        onDragStart={(e) => onRowDragStart(e, idx)}
+                        onDragOver={(e) => onRowDragOver(e, idx)}
+                        onDrop={(e) => onRowDrop(e, idx)}
+                        onDragEnd={onRowDragEnd}
+                        sx={{
+                            p: 2,
+                            display: 'grid',
+                            gridTemplateColumns: 'auto 1fr auto',
+                            alignItems: 'center',
+                            gap: 3,
+                            borderLeft: `4px solid ${p.status === 'published' ? '#10B981' : '#F59E0B'}`
+                        }}
+                    >
+                        <Box sx={{ color: 'text.secondary', cursor: 'grab', '&:active': { cursor: 'grabbing' }, display: 'flex', alignItems: 'center' }}>
+                            <DragIndicatorIcon />
+                        </Box>
 
-            {!editing && items && (
-                <Stack spacing={2} sx={{
-                    '& .row': { transition: 'transform .18s ease, box-shadow .18s ease' },
-                    '& .row.dragging': { transform: 'scale(1.01)', boxShadow: 6, opacity: 0.9, cursor: 'grabbing' },
-                    '& .row.over': { boxShadow: 4 },
-                }}>
-                    {items.map((p, idx) => (
-                        <Paper
-                            key={p.id}
-                            className={`row${dragIdx === idx ? ' dragging' : ''}${overIdx === idx ? ' over' : ''}`}
-                            draggable
-                            onDragStart={(e) => onRowDragStart(e, idx)}
-                            onDragOver={(e) => onRowDragOver(e, idx)}
-                            onDrop={(e) => onRowDrop(e, idx)}
-                            onDragEnd={onRowDragEnd}
-                            sx={{ p: 2, display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: 2 }}
-                        >
-                            <Box sx={{ color: 'text.secondary', cursor: 'grab', '&:active': { cursor: 'grabbing' } }}>
-                                <DragIndicatorIcon />
-                            </Box>
-                            <Box>
-                                <Typography fontWeight={700}>{p.title}</Typography>
-                                <Typography variant="body2" color="text.secondary" sx={{ mb: 1, display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2, overflow: 'hidden' }}>{p.summary}</Typography>
-                                <Stack direction="row" spacing={1}>
-                                    <Chip size="small" label={p.status} color={p.status === 'published' ? 'success' : 'default'} />
-                                    {p.role && <Chip size="small" label={p.role} />}
-                                </Stack>
-                            </Box>
-                            <Stack direction="row" spacing={0.5}>
-                                <IconButton onClick={() => setPreviewProject(p)}><VisibilityIcon /></IconButton>
-                                <IconButton onClick={() => handleEdit(p)}><EditIcon /></IconButton>
-                                <IconButton color="error" onClick={() => handleDelete(p.id, p.title)}><DeleteIcon /></IconButton>
+                        <Box>
+                            <Stack direction="row" alignItems="center" spacing={2} mb={0.5}>
+                                <Typography fontWeight={700} variant="h6">{p.title}</Typography>
+                                <Chip
+                                    size="small"
+                                    label={p.status}
+                                    color={p.status === 'published' ? 'success' : 'warning'}
+                                    variant="outlined"
+                                />
+                                {p.is_featured && (
+                                    <Chip size="small" label="Featured" color="primary" />
+                                )}
                             </Stack>
-                        </Paper>
-                    ))}
-                </Stack>
-            )}
+                            <Typography variant="body2" color="text.secondary" sx={{ display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 1, overflow: 'hidden' }}>
+                                {p.summary}
+                            </Typography>
+                        </Box>
 
-            {previewProject && (
-                <ProjectPreview project={previewProject} />
+                        <Stack direction="row" spacing={1}>
+                            <IconButton onClick={() => handleEdit(p.id)} color="primary">
+                                <EditIcon />
+                            </IconButton>
+                            <IconButton onClick={() => handleDelete(p.id, p.title)} color="error">
+                                <DeleteIcon />
+                            </IconButton>
+                        </Stack>
+                    </Paper>
+                ))}
+            </Stack>
+
+            {items?.length === 0 && (
+                <Box textAlign="center" py={8} color="text.secondary">
+                    No projects found. Create your first project!
+                </Box>
             )}
         </Box>
     )
-}
+} 

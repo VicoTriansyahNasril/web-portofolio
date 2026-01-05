@@ -4,12 +4,12 @@ import { motion } from 'framer-motion';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { fetchAdminExperiences, createAdminExperience, updateAdminExperience, deleteAdminExperience } from '../../api/experiences';
-import { confirm, alert } from '../../utils/confirm';
-import ExperienceFormModal from '../../components/admin/ExperienceFormModal';
-import { Experience } from '../../types';
+import { experienceAPI } from '@/features/experiences/api/experienceAPI';
+import { Experience } from '@/features/experiences/types';
+import ExperienceFormModal from '@/features/experiences/components/ExperienceFormModal';
+import { confirm, alert } from '@/utils/confirm';
 
-const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString('id-ID', { year: 'numeric', month: 'long' });
+const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
 
 export default function AdminExperiences() {
     const [items, setItems] = useState<Experience[]>([]);
@@ -19,7 +19,7 @@ export default function AdminExperiences() {
 
     const loadItems = async () => {
         try {
-            const data = await fetchAdminExperiences();
+            const data = await experienceAPI.getAllAdmin();
             setItems(data);
         } finally {
             setLoading(false);
@@ -28,34 +28,32 @@ export default function AdminExperiences() {
 
     useEffect(() => { loadItems() }, []);
 
-    const handleOpenModal = (item: Experience | null = null) => { setEditingItem(item); setIsModalOpen(true); };
-    const handleCloseModal = () => { setEditingItem(null); setIsModalOpen(false); };
-
     const handleDelete = async (item: Experience) => {
-        const res = await confirm({ title: `Hapus "${item.title}"?` });
+        const res = await confirm({ title: `Delete "${item.title}"?` });
         if (res.isConfirmed) {
             try {
-                await deleteAdminExperience(item.id);
-                alert({ title: 'Sukses', text: 'Data berhasil dihapus.' });
+                await experienceAPI.delete(item.id);
+                alert({ title: 'Success', text: 'Deleted successfully.' });
                 loadItems();
-            } catch (_e) {
-                alert({ title: 'Error', icon: 'error', text: 'Gagal menghapus data.' });
+            } catch {
+                alert({ title: 'Error', icon: 'error', text: 'Failed to delete.' });
             }
         }
     };
 
-    const handleSubmit = async (values: Partial<Omit<Experience, 'id' | 'created_at' | 'updated_at'>>) => {
+    const handleSubmit = async (values: Partial<Experience>) => {
         try {
             if (editingItem) {
-                await updateAdminExperience(editingItem.id, values);
+                await experienceAPI.update(editingItem.id, values);
             } else {
-                await createAdminExperience(values);
+                await experienceAPI.create(values);
             }
-            handleCloseModal();
-            alert({ title: 'Sukses', text: 'Data berhasil disimpan.' });
+            setIsModalOpen(false);
+            setEditingItem(null);
+            alert({ title: 'Success', text: 'Saved successfully.' });
             loadItems();
-        } catch (_e) {
-            alert({ title: 'Error', icon: 'error', text: 'Gagal menyimpan data.' });
+        } catch {
+            alert({ title: 'Error', icon: 'error', text: 'Failed to save.' });
         }
     };
 
@@ -65,8 +63,8 @@ export default function AdminExperiences() {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <Box sx={{ maxWidth: 980, mx: 'auto' }}>
                 <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
-                    <Typography variant="h5" fontWeight={800}>Kelola Pengalaman</Typography>
-                    <Button startIcon={<AddIcon />} variant="contained" onClick={() => handleOpenModal()}>Tambah</Button>
+                    <Typography variant="h5" fontWeight={800}>Manage Experiences</Typography>
+                    <Button startIcon={<AddIcon />} variant="contained" onClick={() => { setEditingItem(null); setIsModalOpen(true) }}>Add</Button>
                 </Stack>
                 <Stack spacing={2}>
                     {items.map(item => (
@@ -75,18 +73,18 @@ export default function AdminExperiences() {
                                 <Typography variant="h6" fontWeight={600}>{item.title}</Typography>
                                 <Typography variant="body1" color="text.secondary">{item.entity_name}</Typography>
                                 <Typography variant="caption" color="text.secondary">
-                                    {formatDate(item.start_date)} - {item.end_date ? formatDate(item.end_date) : 'Sekarang'}
+                                    {formatDate(item.start_date)} - {item.end_date ? formatDate(item.end_date) : 'Present'}
                                 </Typography>
                             </Box>
                             <Stack direction="row" spacing={1}>
-                                <IconButton onClick={() => handleOpenModal(item)}><EditIcon /></IconButton>
+                                <IconButton onClick={() => { setEditingItem(item); setIsModalOpen(true) }}><EditIcon /></IconButton>
                                 <IconButton color="error" onClick={() => handleDelete(item)}><DeleteIcon /></IconButton>
                             </Stack>
                         </Paper>
                     ))}
                 </Stack>
             </Box>
-            <ExperienceFormModal open={isModalOpen} onClose={handleCloseModal} onSubmit={handleSubmit} initialData={editingItem} />
+            <ExperienceFormModal open={isModalOpen} onClose={() => setIsModalOpen(false)} onSubmit={handleSubmit} initialData={editingItem} />
         </motion.div>
     );
 }

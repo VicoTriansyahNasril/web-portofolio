@@ -37,6 +37,7 @@
     "react-dom": "^19.1.1",
     "react-dropzone": "^14.2.3",
     "react-easy-crop": "^5.5.3",
+    "react-error-boundary": "^6.0.1",
     "react-image-crop": "^11.0.10",
     "react-markdown": "^10.1.0",
     "react-router-dom": "^7.9.1",

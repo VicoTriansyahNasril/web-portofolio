@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Box, Button, Paper, Stack, Typography, CircularProgress, IconButton } from '@mui/material';
+import { Box, Button, Paper, Stack, Typography, CircularProgress, IconButton, Alert } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -7,10 +7,10 @@ import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { fetchAdminSkills, createAdminSkill, updateAdminSkill, deleteAdminSkill, reorderAdminSkills } from '../../api/skills';
-import { confirm, alert } from '../../utils/confirm';
-import SkillFormModal from '../../components/admin/SkillFormModal';
-import { Skill } from '../../types';
+import { skillAPI } from '@/features/skills/api/skillAPI';
+import { Skill, SkillCreateDTO } from '@/features/skills/types';
+import SkillFormModal from '@/features/skills/components/SkillFormModal';
+import { confirm, alert } from '@/utils/confirm';
 
 interface SortableItemProps {
     skill: Skill;
@@ -41,8 +41,9 @@ function SortableItem({ skill, onEdit, onDelete }: SortableItemProps) {
 
 export default function AdminSkills() {
     const [skills, setSkills] = useState<Skill[]>([]);
-    const [loading, setLoading] = useState<boolean>(true);
-    const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingSkill, setEditingSkill] = useState<Skill | null>(null);
 
     const sensors = useSensors(
@@ -52,9 +53,12 @@ export default function AdminSkills() {
 
     const loadSkills = async () => {
         setLoading(true);
+        setError(null);
         try {
-            const data = await fetchAdminSkills();
+            const data = await skillAPI.getAllAdmin();
             setSkills(data);
+        } catch (err) {
+            setError('Failed to load skills.');
         } finally {
             setLoading(false);
         }
@@ -66,30 +70,37 @@ export default function AdminSkills() {
     const handleCloseModal = () => { setEditingSkill(null); setIsModalOpen(false); };
 
     const handleDelete = async (skill: Skill) => {
-        const res = await confirm({ title: `Hapus "${skill.name}"?` });
+        const res = await confirm({ title: `Delete "${skill.name}"?` });
         if (res.isConfirmed) {
             try {
-                await deleteAdminSkill(skill.id);
-                alert({ title: 'Sukses', text: 'Skill berhasil dihapus.' });
+                await skillAPI.delete(skill.id);
+                alert({ title: 'Success', text: 'Skill deleted successfully.' });
                 loadSkills();
-            } catch (_e) {
-                alert({ title: 'Error', icon: 'error', text: 'Gagal menghapus skill.' });
+            } catch {
+                alert({ title: 'Error', icon: 'error', text: 'Failed to delete skill.' });
             }
         }
     };
 
-    const handleSubmit = async (values: Partial<Omit<Skill, 'id' | 'created_at' | 'updated_at'>>) => {
+    const handleSubmit = async (values: Partial<Skill>) => {
+        if (!values.name || !values.group) return;
+
+        const payload: SkillCreateDTO = {
+            name: values.name,
+            group: values.group
+        };
+
         try {
             if (editingSkill) {
-                await updateAdminSkill(editingSkill.id, values);
+                await skillAPI.update(editingSkill.id, payload);
             } else {
-                await createAdminSkill(values);
+                await skillAPI.create(payload);
             }
             handleCloseModal();
-            alert({ title: 'Sukses', text: 'Data skill berhasil disimpan.' });
+            alert({ title: 'Success', text: 'Skill saved successfully.' });
             loadSkills();
-        } catch (_e) {
-            alert({ title: 'Error', icon: 'error', text: 'Gagal menyimpan data skill.' });
+        } catch {
+            alert({ title: 'Error', icon: 'error', text: 'Failed to save skill.' });
         }
     };
 
@@ -100,12 +111,11 @@ export default function AdminSkills() {
             const newIndex = skills.findIndex(item => item.id === over.id);
             const newOrder = arrayMove(skills, oldIndex, newIndex);
             setSkills(newOrder);
-
             try {
-                const payload = newOrder.map((item, index) => ({ id: item.id, order_index: index }));
-                await reorderAdminSkills(payload);
-            } catch (error) {
-                alert({ title: 'Error', icon: 'error', text: 'Gagal menyimpan urutan baru.' });
+                const payload = newOrder.map((item, index) => ({ id: item.id, sort_order: index }));
+                await skillAPI.reorder(payload);
+            } catch {
+                alert({ title: 'Error', icon: 'error', text: 'Failed to save order.' });
                 loadSkills();
             }
         }
@@ -116,10 +126,10 @@ export default function AdminSkills() {
     return (
         <Box sx={{ maxWidth: 980, mx: 'auto' }}>
             <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
-                <Typography variant="h5" fontWeight={800}>Kelola Skills</Typography>
-                <Button startIcon={<AddIcon />} variant="contained" onClick={() => handleOpenModal()}>Tambah Skill</Button>
+                <Typography variant="h5" fontWeight={800}>Manage Skills</Typography>
+                <Button startIcon={<AddIcon />} variant="contained" onClick={() => handleOpenModal()}>Add Skill</Button>
             </Stack>
-
+            {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                 <SortableContext items={skills.map(s => s.id)} strategy={verticalListSortingStrategy}>
                     <Stack spacing={2}>
@@ -129,7 +139,6 @@ export default function AdminSkills() {
                     </Stack>
                 </SortableContext>
             </DndContext>
-
             <SkillFormModal open={isModalOpen} onClose={handleCloseModal} onSubmit={handleSubmit} initialData={editingSkill} />
         </Box>
     );

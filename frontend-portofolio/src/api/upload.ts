@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { api } from './client'
+import { api } from '@/lib/axios'
 
 interface SignatureResponse {
     signature: string

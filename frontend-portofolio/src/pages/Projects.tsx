@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react'
 import { Typography, Box, CircularProgress } from '@mui/material'
 import { motion, AnimatePresence, Variants } from 'framer-motion'
-import { fetchPublicProjects } from '../api/projects'
-import ProjectCard from '../components/public/ProjectCard'
-import { Project } from '../types'
+import ProjectCard from '@/features/projects/components/ProjectCard'
+import { Project } from '@/features/projects/types'
+import { usePublicData } from '@/hooks/usePublicData'
 
 const containerVariants: Variants = {
     hidden: { opacity: 0 },
@@ -29,22 +28,17 @@ const itemVariants: Variants = {
 }
 
 export default function Projects() {
-    const [projects, setProjects] = useState<Project[]>([])
-    const [loading, setLoading] = useState(true)
+    const { data: projects, isLoading } = usePublicData<Project[]>('/api/projects')
 
-    useEffect(() => {
-        fetchPublicProjects()
-            .then(setProjects)
-            .finally(() => setLoading(false))
-    }, [])
-
-    if (loading) {
+    if (isLoading) {
         return (
             <Box sx={{ display: 'grid', placeItems: 'center', minHeight: '60vh' }}>
                 <CircularProgress size={50} />
             </Box>
         )
     }
+
+    const safeProjects = Array.isArray(projects) ? projects : []
 
     return (
         <Box>
@@ -95,7 +89,7 @@ export default function Projects() {
                             gap: 3
                         }}
                     >
-                        {projects.map((project, index) => (
+                        {safeProjects.map((project, index) => (
                             <motion.div
                                 key={project.id}
                                 variants={itemVariants}
@@ -109,7 +103,7 @@ export default function Projects() {
                 </AnimatePresence>
             </motion.div>
 
-            {projects.length === 0 && (
+            {safeProjects.length === 0 && (
                 <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
