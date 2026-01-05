@@ -3,7 +3,7 @@ module backend-portofolio
 go 1.23.0
 
 require (
-	github.com/cloudinary/cloudinary-go/v2 v2.13.0
+	github.com/cloudinary/cloudinary-go/v2 v2.14.0
 	github.com/gin-contrib/gzip v1.0.1
 	github.com/gin-gonic/gin v1.11.0
 	github.com/go-redis/redis/v8 v8.11.5

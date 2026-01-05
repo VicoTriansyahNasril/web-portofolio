@@ -1,19 +1,20 @@
 package server
 
 import (
-	"context"
 	"net/http"
 	"time"
 
+	"backend-portofolio/internal/adapters/handler"
+	"backend-portofolio/internal/adapters/repository"
 	"backend-portofolio/internal/config"
-	"backend-portofolio/internal/db"
-	"backend-portofolio/internal/handlers"
+	"backend-portofolio/internal/core/services"
 	"backend-portofolio/internal/middleware"
 	"backend-portofolio/internal/websocket"
 
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 	gows "github.com/gorilla/websocket"
+	"gorm.io/gorm"
 )
 
 var upgrader = gows.Upgrader{
@@ -38,42 +39,10 @@ func wsHandler(c *gin.Context) {
 }
 
 func healthCheck(c *gin.Context) {
-	status := "initializing"
-	dbStatus := "connecting"
-	code := http.StatusServiceUnavailable
-
-	if db.IsConnected() {
-		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-		defer cancel()
-
-		sqlDB, _ := db.Conn.DB()
-		errCh := make(chan error, 1)
-		go func() { errCh <- sqlDB.Ping() }()
-
-		select {
-		case err := <-errCh:
-			if err == nil {
-				status = "active"
-				dbStatus = "connected"
-				code = http.StatusOK
-			} else {
-				status = "degraded"
-				dbStatus = "error"
-			}
-		case <-ctx.Done():
-			status = "degraded"
-			dbStatus = "timeout"
-		}
-	}
-
-	c.JSON(code, gin.H{
-		"status":    status,
-		"database":  dbStatus,
-		"timestamp": time.Now().Format(time.RFC3339),
-	})
+	c.JSON(http.StatusOK, gin.H{"status": "active"})
 }
 
-func SetupRouter(cfg *config.Config) *gin.Engine {
+func SetupRouter(cfg *config.Config, dbConn *gorm.DB) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 
 	r := gin.New()
@@ -86,49 +55,82 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 	r.Match([]string{"GET", "HEAD"}, "/health", healthCheck)
 	r.GET("/ws", wsHandler)
 
+	projectRepo := repository.NewProjectRepo(dbConn)
+	projectSvc := services.NewProjectService(projectRepo)
+	projectHdl := handler.NewProjectHandler(projectSvc)
+
+	profileRepo := repository.NewProfileRepo(dbConn)
+	profileSvc := services.NewProfileService(profileRepo)
+	profileHdl := handler.NewProfileHandler(profileSvc)
+
+	skillRepo := repository.NewSkillRepo(dbConn)
+	skillSvc := services.NewSkillService(skillRepo, profileRepo)
+	skillHdl := handler.NewSkillHandler(skillSvc)
+
+	achievementRepo := repository.NewAchievementRepo(dbConn)
+	achievementSvc := services.NewAchievementService(achievementRepo)
+	achievementHdl := handler.NewAchievementHandler(achievementSvc)
+
+	experienceRepo := repository.NewExperienceRepo(dbConn)
+	experienceSvc := services.NewExperienceService(experienceRepo)
+	experienceHdl := handler.NewExperienceHandler(experienceSvc)
+
+	analyticsRepo := repository.NewAnalyticsRepo(dbConn)
+	analyticsSvc := services.NewAnalyticsService(analyticsRepo)
+	analyticsHdl := handler.NewAnalyticsHandler(analyticsSvc)
+
+	authSvc := services.NewAuthService(cfg.JWTSecret, cfg.AdminEmail, cfg.AdminPassword)
+	authHdl := handler.NewAuthHandler(authSvc)
+
+	uploadSvc := services.NewUploadService(cfg.CloudinaryURL)
+	uploadHdl := handler.NewUploadHandler(uploadSvc)
+
 	publicAPI := r.Group("/api")
-	publicAPI.Use(middleware.RequireDB())
 	publicAPI.Use(middleware.CacheControl(5 * time.Minute))
 	{
-		publicAPI.GET("/projects", handlers.ListPublicProjects())
-		publicAPI.GET("/projects/:slug", handlers.GetProjectBySlug())
-		publicAPI.GET("/profile", handlers.GetProfilePublic())
-		publicAPI.GET("/skills", handlers.GetSkillsPublic())
-		publicAPI.GET("/experiences", handlers.ListPublicExperiences())
-		publicAPI.GET("/achievements", handlers.ListPublicAchievements())
+		publicAPI.GET("/projects", projectHdl.ListPublic)
+		publicAPI.GET("/projects/:slug", projectHdl.GetBySlug)
+		publicAPI.GET("/profile", profileHdl.GetPublic)
+		publicAPI.GET("/skills", skillHdl.ListPublic)
+		publicAPI.GET("/experiences", experienceHdl.ListPublic)
+		publicAPI.GET("/achievements", achievementHdl.ListPublic)
 	}
 
-	r.POST("/api/track", handlers.TrackVisit())
-	r.POST("/api/auth/login", handlers.LoginHandler(cfg.JWTSecret, cfg.AdminEmail, cfg.AdminPassword))
+	r.POST("/api/track", analyticsHdl.TrackVisit)
+	r.POST("/api/auth/login", authHdl.Login)
 
 	admin := r.Group("/api/admin", middleware.JWTAuth(cfg.JWTSecret))
-	admin.Use(middleware.RequireDB())
 	{
-		admin.GET("/projects", handlers.AdminListProjects())
-		admin.GET("/projects/:id", handlers.GetAdminProject())
+		admin.GET("/projects", projectHdl.AdminList)
+		admin.GET("/projects/:id", projectHdl.GetAdminByID)
+		admin.POST("/projects", projectHdl.Create)
+		admin.PUT("/projects/:id", projectHdl.Update)
+		admin.DELETE("/projects/:id", projectHdl.Delete)
+		admin.POST("/projects/reorder", projectHdl.Reorder)
 
-		admin.POST("/projects", handlers.CreateProject())
-		admin.PUT("/projects/:id", handlers.UpdateProject())
-		admin.DELETE("/projects/:id", handlers.DeleteProject())
-		admin.POST("/projects/reorder", handlers.ReorderProjects())
-		admin.GET("/upload/signature", handlers.GetUploadSignatureHandler(cfg.CloudinaryURL))
-		admin.PUT("/profile", handlers.UpsertProfile())
-		admin.GET("/skills", handlers.AdminListSkills())
-		admin.POST("/skills", handlers.CreateSkill())
-		admin.PUT("/skills/:id", handlers.UpdateSkill())
-		admin.DELETE("/skills/:id", handlers.DeleteSkill())
-		admin.POST("/skills/reorder", handlers.ReorderSkills())
-		admin.GET("/experiences", handlers.AdminListExperiences())
-		admin.POST("/experiences", handlers.CreateExperience())
-		admin.PUT("/experiences/:id", handlers.UpdateExperience())
-		admin.DELETE("/experiences/:id", handlers.DeleteExperience())
-		admin.GET("/achievements", handlers.AdminListAchievements())
-		admin.POST("/achievements", handlers.CreateAchievement())
-		admin.PUT("/achievements/:id", handlers.UpdateAchievement())
-		admin.DELETE("/achievements/:id", handlers.DeleteAchievement())
-		admin.POST("/achievements/reorder", handlers.ReorderAchievements())
-		admin.GET("/analytics/visitors", handlers.GetVisitorsSummary())
-		admin.GET("/analytics/visitors/:visitorHash", handlers.GetVisitorDetail())
+		admin.PUT("/profile", profileHdl.Upsert)
+
+		admin.GET("/skills", skillHdl.ListAdmin)
+		admin.POST("/skills", skillHdl.Create)
+		admin.PUT("/skills/:id", skillHdl.Update)
+		admin.DELETE("/skills/:id", skillHdl.Delete)
+		admin.POST("/skills/reorder", skillHdl.Reorder)
+
+		admin.GET("/experiences", experienceHdl.ListAdmin)
+		admin.POST("/experiences", experienceHdl.Create)
+		admin.PUT("/experiences/:id", experienceHdl.Update)
+		admin.DELETE("/experiences/:id", experienceHdl.Delete)
+
+		admin.GET("/achievements", achievementHdl.ListAdmin)
+		admin.POST("/achievements", achievementHdl.Create)
+		admin.PUT("/achievements/:id", achievementHdl.Update)
+		admin.DELETE("/achievements/:id", achievementHdl.Delete)
+		admin.POST("/achievements/reorder", achievementHdl.Reorder)
+
+		admin.GET("/analytics/visitors", analyticsHdl.GetVisitorsSummary)
+		admin.GET("/analytics/visitors/:visitorHash", analyticsHdl.GetVisitorDetail)
+
+		admin.GET("/upload/signature", uploadHdl.GetSignature)
 	}
 
 	return r

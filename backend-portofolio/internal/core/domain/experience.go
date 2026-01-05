@@ -1,5 +1,4 @@
-// internal/models/experience.go
-package models
+package domain
 
 import "time"
 

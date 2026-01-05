@@ -1,8 +1,6 @@
-// portofolio/backend-portofolio/internal/middleware/cache.go
 package middleware
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -10,9 +8,9 @@ import (
 
 func CacheControl(duration time.Duration) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if c.Request.Method == "GET" {
-			c.Header("Cache-Control", fmt.Sprintf("public, max-age=%.0f, s-maxage=%.0f", duration.Seconds(), duration.Seconds()*2))
-		}
+		c.Header("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate")
+		c.Header("Pragma", "no-cache")
+		c.Header("Expires", "0")
 		c.Next()
 	}
 }

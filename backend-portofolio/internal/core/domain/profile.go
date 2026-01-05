@@ -1,5 +1,4 @@
-// internal/models/profile.go
-package models
+package domain
 
 type SocialLink struct {
 	ID        uint   `json:"id" gorm:"primaryKey"`

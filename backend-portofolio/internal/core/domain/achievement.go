@@ -1,5 +1,4 @@
-// internal/models/achievement.go
-package models
+package domain
 
 import "time"
 

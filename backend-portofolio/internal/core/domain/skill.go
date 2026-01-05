@@ -1,5 +1,4 @@
-// internal/models/skill.go
-package models
+package domain
 
 import "time"
 
