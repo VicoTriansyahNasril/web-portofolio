@@ -24,6 +24,7 @@ export default function ProjectEdit({ mode }: ProjectEditProps) {
             setLoading(false)
             return
         }
+
         if (!id) {
             navigate('/admin/projects')
             return

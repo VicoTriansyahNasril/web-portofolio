@@ -1,11 +1,12 @@
 import { useState, useEffect, ChangeEvent, FormEvent } from 'react'
-import { Project } from '../../types'
-import { slugify, isValidSlug } from '../../utils/slugify'
-import { uploadFile } from '../../api/upload'
+import { Project, UpdateProjectDTO } from '@/features/projects/types'
+import { slugify, isValidSlug } from '@/utils/slugify'
+import { uploadFile } from '@/api/upload'
+import { alert } from '@/utils/confirm'
 
 interface UseProjectFormProps {
     initialData?: Partial<Project> | null
-    onSubmit: (data: Partial<Project>) => Promise<void>
+    onSubmit: (data: UpdateProjectDTO) => Promise<void>
 }
 
 const formatDate = (iso?: string | null) => iso ? new Date(iso).toISOString().split('T')[0] : ''
@@ -17,13 +18,13 @@ export function useProjectForm({ initialData, onSubmit }: UseProjectFormProps) {
         role: '',
         summary: '',
         body: '',
-        techStack: '',
-        demoUrl: '',
-        repoUrl: '',
-        coverUrl: '',
-        startDate: '',
-        endDate: '',
-        isFeatured: false,
+        tech_stack: '',
+        demo_url: '',
+        repo_url: '',
+        cover_url: '',
+        start_date: '',
+        end_date: '',
+        is_featured: false,
         status: 'draft' as 'draft' | 'published'
     })
 
@@ -39,16 +40,18 @@ export function useProjectForm({ initialData, onSubmit }: UseProjectFormProps) {
                 role: initialData.role || '',
                 summary: initialData.summary || '',
                 body: initialData.body || '',
-                techStack: initialData.tech_stack || '',
-                demoUrl: initialData.demo_url || '',
-                repoUrl: initialData.repo_url || '',
-                coverUrl: initialData.cover_url || '',
-                startDate: formatDate(initialData.start_date),
-                endDate: formatDate(initialData.end_date),
-                isFeatured: initialData.is_featured || false,
+                tech_stack: initialData.tech_stack || '',
+                demo_url: initialData.demo_url || '',
+                repo_url: initialData.repo_url || '',
+                cover_url: initialData.cover_url || '',
+                start_date: formatDate(initialData.start_date),
+                end_date: formatDate(initialData.end_date),
+                is_featured: initialData.is_featured || false,
                 status: initialData.status || 'draft'
             })
-            setGallery(initialData.gallery || [])
+            if (Array.isArray(initialData.gallery)) {
+                setGallery(initialData.gallery)
+            }
         }
     }, [initialData])
 
@@ -80,6 +83,9 @@ export function useProjectForm({ initialData, onSubmit }: UseProjectFormProps) {
         try {
             const urls = await Promise.all(Array.from(files).map(uploadFile))
             setGallery(prev => [...prev, ...urls])
+        } catch (error) {
+            console.error(error)
+            alert({ title: 'Error', text: 'Failed to upload images.', icon: 'error' })
         } finally {
             setLoading(false)
         }
@@ -87,25 +93,34 @@ export function useProjectForm({ initialData, onSubmit }: UseProjectFormProps) {
 
     const submit = async (e: FormEvent) => {
         e.preventDefault()
-        if (slugError) return
+
+        if (!formData.title.trim()) {
+            alert({ title: 'Validation Error', text: 'Title is required.', icon: 'warning' })
+            return
+        }
+        if (!formData.slug.trim() || slugError) {
+            alert({ title: 'Validation Error', text: 'Valid Slug is required.', icon: 'warning' })
+            return
+        }
+        if (!formData.summary.trim()) {
+            alert({ title: 'Validation Error', text: 'Summary is required.', icon: 'warning' })
+            return
+        }
+        if (!formData.start_date) {
+            alert({ title: 'Validation Error', text: 'Start Date is required.', icon: 'warning' })
+            return
+        }
+
         setLoading(true)
         try {
             await onSubmit({
-                title: formData.title,
-                slug: formData.slug,
-                role: formData.role,
-                summary: formData.summary,
-                body: formData.body,
-                tech_stack: formData.techStack,
-                demo_url: formData.demoUrl,
-                repo_url: formData.repoUrl,
-                cover_url: formData.coverUrl,
-                start_date: formData.startDate ? new Date(formData.startDate).toISOString() : null,
-                end_date: formData.endDate ? new Date(formData.endDate).toISOString() : null,
+                ...formData,
+                start_date: new Date(formData.start_date).toISOString(),
+                end_date: formData.end_date ? new Date(formData.end_date).toISOString() : "",
                 gallery,
-                is_featured: formData.isFeatured,
-                status: formData.status,
             })
+        } catch (err) {
+            throw err
         } finally {
             setLoading(false)
         }
