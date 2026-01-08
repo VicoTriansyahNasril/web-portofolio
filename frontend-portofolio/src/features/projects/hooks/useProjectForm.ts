@@ -2,6 +2,7 @@ import { useState, useEffect, ChangeEvent, FormEvent } from 'react'
 import { Project, UpdateProjectDTO } from '../types'
 import { slugify, isValidSlug } from '@/utils/slugify'
 import { uploadFile } from '@/api/upload'
+import { alert } from '@/utils/confirm'
 
 interface UseProjectFormProps {
     initialData?: Partial<Project> | null
@@ -48,7 +49,9 @@ export function useProjectForm({ initialData, onSubmit }: UseProjectFormProps) {
                 is_featured: initialData.is_featured || false,
                 status: initialData.status || 'draft'
             })
-            setGallery(initialData.gallery || [])
+            if (Array.isArray(initialData.gallery)) {
+                setGallery(initialData.gallery)
+            }
         }
     }, [initialData])
 
@@ -82,6 +85,7 @@ export function useProjectForm({ initialData, onSubmit }: UseProjectFormProps) {
             setGallery(prev => [...prev, ...urls])
         } catch (error) {
             console.error(error)
+            alert({ title: 'Error', text: 'Failed to upload images.', icon: 'error' })
         } finally {
             setLoading(false)
         }
@@ -89,7 +93,28 @@ export function useProjectForm({ initialData, onSubmit }: UseProjectFormProps) {
 
     const submit = async (e: FormEvent) => {
         e.preventDefault()
-        if (slugError) return
+
+        if (!formData.title.trim()) {
+            alert({ title: 'Validation Error', text: 'Title is required.', icon: 'warning' })
+            return
+        }
+        if (!formData.slug.trim() || slugError) {
+            alert({ title: 'Validation Error', text: 'Valid Slug is required.', icon: 'warning' })
+            return
+        }
+        if (!formData.summary.trim()) {
+            alert({ title: 'Validation Error', text: 'Summary is required.', icon: 'warning' })
+            return
+        }
+        if (!formData.body.trim()) {
+            alert({ title: 'Validation Error', text: 'Content Body is required.', icon: 'warning' })
+            return
+        }
+        if (!formData.tech_stack.trim()) {
+            alert({ title: 'Validation Error', text: 'Tech Stack is required.', icon: 'warning' })
+            return
+        }
+
         setLoading(true)
         try {
             await onSubmit({
@@ -98,6 +123,8 @@ export function useProjectForm({ initialData, onSubmit }: UseProjectFormProps) {
                 end_date: formData.end_date ? new Date(formData.end_date).toISOString() : "",
                 gallery,
             })
+        } catch (err) {
+            throw err
         } finally {
             setLoading(false)
         }

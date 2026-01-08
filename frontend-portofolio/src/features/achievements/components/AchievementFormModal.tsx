@@ -18,13 +18,17 @@ export default function AchievementFormModal({ open, onClose, onSubmit, initialD
             setFormData(initialData ? {
                 ...initialData,
                 date: initialData.date ? new Date(initialData.date).toISOString().split('T')[0] : ''
-            } : {})
+            } : {
+                title: '', issuer: '', date: '', description: '', credential_url: '', link_text: ''
+            })
         }
     }, [initialData, open])
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault()
-        if (!formData.title || !formData.issuer || !formData.date) return
+        if (!formData.title || !formData.issuer || !formData.date) {
+            return
+        }
 
         setLoading(true)
         try {
@@ -33,6 +37,8 @@ export default function AchievementFormModal({ open, onClose, onSubmit, initialD
                 date: new Date(formData.date!).toISOString()
             })
             onClose()
+        } catch (error) {
+            console.error(error)
         } finally {
             setLoading(false)
         }
@@ -48,12 +54,50 @@ export default function AchievementFormModal({ open, onClose, onSubmit, initialD
                 </DialogTitle>
                 <DialogContent>
                     <Stack spacing={3} sx={{ mt: 1 }}>
-                        <TextField label="Title" value={formData.title || ''} onChange={e => setFormData({ ...formData, title: e.target.value })} required fullWidth />
-                        <TextField label="Issuer" value={formData.issuer || ''} onChange={e => setFormData({ ...formData, issuer: e.target.value })} required fullWidth />
-                        <TextField label="Date" type="date" value={formData.date || ''} onChange={e => setFormData({ ...formData, date: e.target.value })} required fullWidth InputLabelProps={{ shrink: true }} />
-                        <TextField label="Description" value={formData.description || ''} onChange={e => setFormData({ ...formData, description: e.target.value })} multiline rows={3} fullWidth />
-                        <TextField label="Credential URL" value={formData.credential_url || ''} onChange={e => setFormData({ ...formData, credential_url: e.target.value })} fullWidth />
-                        <TextField label="Link Text" value={formData.link_text || 'View Credential'} onChange={e => setFormData({ ...formData, link_text: e.target.value })} fullWidth />
+                        <TextField
+                            label="Title"
+                            value={formData.title || ''}
+                            onChange={e => setFormData({ ...formData, title: e.target.value })}
+                            required
+                            fullWidth
+                        />
+                        <TextField
+                            label="Issuer"
+                            value={formData.issuer || ''}
+                            onChange={e => setFormData({ ...formData, issuer: e.target.value })}
+                            required
+                            fullWidth
+                        />
+                        <TextField
+                            label="Date"
+                            type="date"
+                            value={formData.date || ''}
+                            onChange={e => setFormData({ ...formData, date: e.target.value })}
+                            required
+                            fullWidth
+                            InputLabelProps={{ shrink: true }}
+                        />
+                        <TextField
+                            label="Description"
+                            value={formData.description || ''}
+                            onChange={e => setFormData({ ...formData, description: e.target.value })}
+                            multiline
+                            rows={3}
+                            fullWidth
+                        />
+                        <TextField
+                            label="Credential URL"
+                            value={formData.credential_url || ''}
+                            onChange={e => setFormData({ ...formData, credential_url: e.target.value })}
+                            fullWidth
+                            placeholder="https://..."
+                        />
+                        <TextField
+                            label="Link Text"
+                            value={formData.link_text || 'View Credential'}
+                            onChange={e => setFormData({ ...formData, link_text: e.target.value })}
+                            fullWidth
+                        />
                     </Stack>
                 </DialogContent>
                 <DialogActions sx={{ p: 3 }}>

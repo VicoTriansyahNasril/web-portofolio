@@ -7,6 +7,7 @@ import (
 	"backend-portofolio/internal/dto"
 	"backend-portofolio/internal/websocket"
 	"encoding/json"
+	"log"
 	"regexp"
 	"strings"
 	"time"
@@ -33,10 +34,14 @@ func (s *projectService) parseDate(d string) *time.Time {
 		return nil
 	}
 	t, err := time.Parse(time.RFC3339, d)
-	if err != nil {
-		return nil
+	if err == nil {
+		return &t
 	}
-	return &t
+	t, err = time.Parse("2006-01-02", d)
+	if err == nil {
+		return &t
+	}
+	return nil
 }
 
 func (s *projectService) toGalleryJSON(arr []string) string {
@@ -75,10 +80,17 @@ func (s *projectService) GetAdminByID(id uint) (*domain.Project, error) {
 }
 
 func (s *projectService) CreateProject(req dto.CreateProjectReq) (*domain.Project, error) {
-	maxOrder, _ := s.repo.GetMaxSortOrder()
+	maxOrder, err := s.repo.GetMaxSortOrder()
+	if err != nil {
+		log.Printf("Warning: GetMaxSortOrder failed: %v", err)
+		maxOrder = 0
+	}
 	nextOrder := maxOrder + 1
 
 	now := time.Now()
+
+	startDate := s.parseDate(req.StartDate)
+
 	p := domain.Project{
 		Slug:        s.normSlug(req.Slug),
 		Title:       strings.TrimSpace(req.Title),
@@ -93,7 +105,7 @@ func (s *projectService) CreateProject(req dto.CreateProjectReq) (*domain.Projec
 		GalleryJSON: s.toGalleryJSON(req.Gallery),
 		SortOrder:   &nextOrder,
 		TechStack:   req.TechStack,
-		StartDate:   s.parseDate(req.StartDate),
+		StartDate:   startDate,
 		EndDate:     s.parseDate(req.EndDate),
 		CreatedAt:   now,
 		UpdatedAt:   now,
@@ -104,6 +116,7 @@ func (s *projectService) CreateProject(req dto.CreateProjectReq) (*domain.Projec
 	}
 
 	if err := s.repo.Create(&p); err != nil {
+		log.Printf("Error creating project: %v", err)
 		return nil, err
 	}
 	s.invalidateCache("")

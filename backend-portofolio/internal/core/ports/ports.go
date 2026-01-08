@@ -46,6 +46,7 @@ type AchievementRepository interface {
 		ID        uint `json:"id"`
 		SortOrder int  `json:"sort_order"`
 	}) error
+	GetMaxSortOrder() (int, error)
 }
 
 type ExperienceRepository interface {

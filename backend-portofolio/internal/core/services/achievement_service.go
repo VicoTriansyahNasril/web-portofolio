@@ -7,6 +7,7 @@ import (
 	"backend-portofolio/internal/dto"
 	"backend-portofolio/internal/websocket"
 	"encoding/json"
+	"log"
 	"time"
 )
 
@@ -40,7 +41,7 @@ func (s *achievementService) GetPublicAchievements() ([]domain.Achievement, erro
 	}
 
 	jsonData, _ := json.Marshal(items)
-	cache.Set(cacheKey, jsonData, 5*time.Minute)
+	cache.Set(cacheKey, jsonData, 300000000000)
 	return items, nil
 }
 
@@ -51,8 +52,19 @@ func (s *achievementService) GetAdminAchievements() ([]domain.Achievement, error
 func (s *achievementService) CreateAchievement(req dto.AchievementReq) error {
 	date, err := time.Parse(time.RFC3339, req.Date)
 	if err != nil {
-		return err
+		date, err = time.Parse("2006-01-02", req.Date)
+		if err != nil {
+			log.Printf("Date parsing error: %v", err)
+			return err
+		}
 	}
+
+	maxOrder, err := s.repo.GetMaxSortOrder()
+	if err != nil {
+		log.Printf("Warning: GetMaxSortOrder failed: %v", err)
+		maxOrder = 0
+	}
+	nextOrder := maxOrder + 1
 
 	achievement := domain.Achievement{
 		Title:         req.Title,
@@ -61,11 +73,13 @@ func (s *achievementService) CreateAchievement(req dto.AchievementReq) error {
 		Description:   req.Description,
 		CredentialURL: req.CredentialURL,
 		LinkText:      req.LinkText,
+		SortOrder:     nextOrder,
 		CreatedAt:     time.Now(),
 		UpdatedAt:     time.Now(),
 	}
 
 	if err := s.repo.Create(&achievement); err != nil {
+		log.Printf("DB Create Error: %v", err)
 		return err
 	}
 	s.invalidateCache()
@@ -75,7 +89,10 @@ func (s *achievementService) CreateAchievement(req dto.AchievementReq) error {
 func (s *achievementService) UpdateAchievement(id uint, req dto.AchievementReq) error {
 	date, err := time.Parse(time.RFC3339, req.Date)
 	if err != nil {
-		return err
+		date, err = time.Parse("2006-01-02", req.Date)
+		if err != nil {
+			return err
+		}
 	}
 
 	achievement := domain.Achievement{

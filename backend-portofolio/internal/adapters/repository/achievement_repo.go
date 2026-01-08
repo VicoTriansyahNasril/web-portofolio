@@ -3,6 +3,7 @@ package repository
 import (
 	"backend-portofolio/internal/core/domain"
 	"backend-portofolio/internal/core/ports"
+	"database/sql"
 	"time"
 
 	"gorm.io/gorm"
@@ -55,4 +56,16 @@ func (r *achievementRepo) Reorder(orders []struct {
 		}
 	}
 	return tx.Commit().Error
+}
+
+func (r *achievementRepo) GetMaxSortOrder() (int, error) {
+	var max sql.NullInt64
+	row := r.db.Model(&domain.Achievement{}).Select("MAX(sort_order)").Row()
+	if err := row.Scan(&max); err != nil {
+		return 0, err
+	}
+	if max.Valid {
+		return int(max.Int64), nil
+	}
+	return 0, nil
 }
