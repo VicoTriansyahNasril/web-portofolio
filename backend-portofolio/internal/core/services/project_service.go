@@ -29,6 +29,13 @@ func (s *projectService) normSlug(slug string) string {
 	return strings.Trim(slug, "-")
 }
 
+func (s *projectService) truncate(text string, length int) string {
+	if len(text) <= length {
+		return text
+	}
+	return text[:length]
+}
+
 func (s *projectService) parseDate(d string) *time.Time {
 	if d == "" {
 		return nil
@@ -88,23 +95,22 @@ func (s *projectService) CreateProject(req dto.CreateProjectReq) (*domain.Projec
 	nextOrder := maxOrder + 1
 
 	now := time.Now()
-
 	startDate := s.parseDate(req.StartDate)
 
 	p := domain.Project{
-		Slug:        s.normSlug(req.Slug),
-		Title:       strings.TrimSpace(req.Title),
-		Summary:     strings.TrimSpace(req.Summary),
+		Slug:        s.truncate(s.normSlug(req.Slug), 160),
+		Title:       s.truncate(strings.TrimSpace(req.Title), 220),
+		Summary:     s.truncate(strings.TrimSpace(req.Summary), 1000),
 		Body:        req.Body,
-		CoverURL:    strings.TrimSpace(req.CoverURL),
-		RepoURL:     strings.TrimSpace(req.RepoURL),
-		DemoURL:     strings.TrimSpace(req.DemoURL),
-		Role:        strings.TrimSpace(req.Role),
+		CoverURL:    s.truncate(strings.TrimSpace(req.CoverURL), 500),
+		RepoURL:     s.truncate(strings.TrimSpace(req.RepoURL), 500),
+		DemoURL:     s.truncate(strings.TrimSpace(req.DemoURL), 500),
+		Role:        s.truncate(strings.TrimSpace(req.Role), 40),
 		Status:      req.Status,
 		IsFeatured:  req.IsFeatured,
 		GalleryJSON: s.toGalleryJSON(req.Gallery),
 		SortOrder:   &nextOrder,
-		TechStack:   req.TechStack,
+		TechStack:   s.truncate(req.TechStack, 500),
 		StartDate:   startDate,
 		EndDate:     s.parseDate(req.EndDate),
 		CreatedAt:   now,
@@ -116,7 +122,7 @@ func (s *projectService) CreateProject(req dto.CreateProjectReq) (*domain.Projec
 	}
 
 	if err := s.repo.Create(&p); err != nil {
-		log.Printf("Error creating project: %v", err)
+		log.Printf("DB Create Error: %v | Slug: %s", err, p.Slug)
 		return nil, err
 	}
 	s.invalidateCache("")
@@ -130,28 +136,28 @@ func (s *projectService) UpdateProject(id uint, req dto.UpdateProjectReq) error 
 	}
 
 	if req.Slug != nil {
-		p.Slug = s.normSlug(*req.Slug)
+		p.Slug = s.truncate(s.normSlug(*req.Slug), 160)
 	}
 	if req.Title != nil {
-		p.Title = strings.TrimSpace(*req.Title)
+		p.Title = s.truncate(strings.TrimSpace(*req.Title), 220)
 	}
 	if req.Summary != nil {
-		p.Summary = strings.TrimSpace(*req.Summary)
+		p.Summary = s.truncate(strings.TrimSpace(*req.Summary), 1000)
 	}
 	if req.Body != nil {
 		p.Body = *req.Body
 	}
 	if req.CoverURL != nil {
-		p.CoverURL = strings.TrimSpace(*req.CoverURL)
+		p.CoverURL = s.truncate(strings.TrimSpace(*req.CoverURL), 500)
 	}
 	if req.RepoURL != nil {
-		p.RepoURL = strings.TrimSpace(*req.RepoURL)
+		p.RepoURL = s.truncate(strings.TrimSpace(*req.RepoURL), 500)
 	}
 	if req.DemoURL != nil {
-		p.DemoURL = strings.TrimSpace(*req.DemoURL)
+		p.DemoURL = s.truncate(strings.TrimSpace(*req.DemoURL), 500)
 	}
 	if req.Role != nil {
-		p.Role = strings.TrimSpace(*req.Role)
+		p.Role = s.truncate(strings.TrimSpace(*req.Role), 40)
 	}
 	if req.Status != nil {
 		p.Status = strings.TrimSpace(*req.Status)
@@ -166,7 +172,7 @@ func (s *projectService) UpdateProject(id uint, req dto.UpdateProjectReq) error 
 		p.SortOrder = req.SortOrder
 	}
 	if req.TechStack != nil {
-		p.TechStack = *req.TechStack
+		p.TechStack = s.truncate(*req.TechStack, 500)
 	}
 	if req.StartDate != nil {
 		p.StartDate = s.parseDate(*req.StartDate)
@@ -177,6 +183,7 @@ func (s *projectService) UpdateProject(id uint, req dto.UpdateProjectReq) error 
 	p.UpdatedAt = time.Now()
 
 	if err := s.repo.Update(p); err != nil {
+		log.Printf("DB Update Error: %v", err)
 		return err
 	}
 	s.invalidateCache(p.Slug)

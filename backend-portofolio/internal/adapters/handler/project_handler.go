@@ -5,6 +5,7 @@ import (
 	"backend-portofolio/internal/core/ports"
 	"backend-portofolio/internal/dto"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -41,6 +42,7 @@ func (h *ProjectHandler) ListPublic(c *gin.Context) {
 
 	items, err := h.svc.GetPublicList()
 	if err != nil {
+		log.Printf("[ProjectHandler] ListPublic Error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
@@ -118,6 +120,7 @@ func (h *ProjectHandler) GetBySlug(c *gin.Context) {
 func (h *ProjectHandler) AdminList(c *gin.Context) {
 	items, err := h.svc.GetAdminList()
 	if err != nil {
+		log.Printf("[ProjectHandler] AdminList Error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "db error"})
 		return
 	}
@@ -162,6 +165,7 @@ func (h *ProjectHandler) GetAdminByID(c *gin.Context) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
 			return
 		}
+		log.Printf("[ProjectHandler] GetAdminByID Error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "db error"})
 		return
 	}
@@ -192,12 +196,14 @@ func (h *ProjectHandler) GetAdminByID(c *gin.Context) {
 func (h *ProjectHandler) Create(c *gin.Context) {
 	var req dto.CreateProjectReq
 	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("[ProjectHandler] BindJSON Error: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid body"})
 		return
 	}
 
 	p, err := h.svc.CreateProject(req)
 	if err != nil {
+		log.Printf("[ProjectHandler] CreateProject Error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -219,6 +225,7 @@ func (h *ProjectHandler) Update(c *gin.Context) {
 	}
 
 	if err := h.svc.UpdateProject(uint(id), req); err != nil {
+		log.Printf("[ProjectHandler] UpdateProject Error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -234,6 +241,7 @@ func (h *ProjectHandler) Delete(c *gin.Context) {
 	}
 
 	if err := h.svc.DeleteProject(uint(id)); err != nil {
+		log.Printf("[ProjectHandler] DeleteProject Error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "delete error"})
 		return
 	}
@@ -248,6 +256,7 @@ func (h *ProjectHandler) Reorder(c *gin.Context) {
 	}
 
 	if err := h.svc.ReorderProjects(req); err != nil {
+		log.Printf("[ProjectHandler] ReorderProjects Error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
