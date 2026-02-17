@@ -45,7 +45,6 @@ function PublicLayout({ children, mode, toggleMode }: { children: React.ReactNod
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <Header mode={mode} toggleMode={toggleMode} />
-      {/* Jika HomePage, container dihandle di dalam Home.tsx untuk full width Hero */}
       {isHomePage ? children : (
         <>
           <Container component="main" sx={{ flex: 1, position: 'relative', zIndex: 1, py: 4 }}>
@@ -54,7 +53,6 @@ function PublicLayout({ children, mode, toggleMode }: { children: React.ReactNod
           <Footer />
         </>
       )}
-      {/* Footer di Home juga bisa dihandle di Home.tsx atau disini, tapi untuk long scroll biasanya footer di paling bawah */}
       {isHomePage && <Footer />}
     </Box>
   )
@@ -105,8 +103,16 @@ function App() {
   }, [mode, isAdminPage])
 
   useEffect(() => {
-    if (!isAdminPage) trackPageVisit(location.pathname)
-  }, [location.pathname, isAdminPage])
+    // ✅ Route '/' TIDAK di-track di sini.
+    //    Home.tsx sudah menangani tracking tiap section (/, /projects, /about)
+    //    via useScrollSectionTracker hook (IntersectionObserver + MutationObserver).
+    //
+    //    Hanya halaman public non-home yang di-track di sini,
+    //    contoh: /projects/:slug (detail project)
+    if (!isAdminPage && !isHomePage) {
+      trackPageVisit(location.pathname)
+    }
+  }, [location.pathname, isAdminPage, isHomePage])
 
   return (
     <ThemeProvider theme={theme}>
@@ -119,8 +125,6 @@ function App() {
           <WebSocketInitializer />
 
           <AuthProvider>
-            {/* Interactive3D dihapus dari sini karena sudah masuk ke Home.tsx */}
-
             {isPublicNonHomePage && (
               <>
                 <AnimatedBackground />

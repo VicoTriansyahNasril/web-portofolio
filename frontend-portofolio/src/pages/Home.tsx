@@ -11,6 +11,7 @@ import type { Skill } from '@/features/skills/types'
 import LazySection from '@/components/utils/LazySection'
 import Interactive3D from '@/components/ui/Interactive3D'
 import SectionBackground from '@/components/ui/SectionBackground'
+import { useScrollSectionTracker } from '@/hooks/useScrollSectionTracker'
 
 const ProjectsSection = lazy(() => import('./Projects'))
 const AboutSection = lazy(() => import('./About'))
@@ -44,7 +45,7 @@ export default function Home() {
     const { data: skills, isLoading: skillsLoading } = usePublicData<Skill[]>('/api/skills')
 
     const loading = profileLoading || skillsLoading
-
+    useScrollSectionTracker()
     useEffect(() => {
         if (location.state?.scrollTo) {
             const sectionId = location.state.scrollTo
