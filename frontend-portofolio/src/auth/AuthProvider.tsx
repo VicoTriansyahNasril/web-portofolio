@@ -12,26 +12,34 @@ interface LoginCredentials {
 }
 
 interface LoginResponse {
-    access_token?: string
+    message?: string
 }
 
 export default function AuthProvider({ children }: AuthProviderProps) {
-    const [token, setToken] = useState<string | null>(() => localStorage.getItem('admin-token'))
+    const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => localStorage.getItem('is-auth') === 'true')
 
     useEffect(() => {
-        if (token) localStorage.setItem('admin-token', token)
-        else localStorage.removeItem('admin-token')
-    }, [token])
+        if (isAuthenticated) localStorage.setItem('is-auth', 'true')
+        else localStorage.removeItem('is-auth')
+    }, [isAuthenticated])
 
     const login = async ({ email, password }: LoginCredentials): Promise<boolean> => {
-        const { data } = await api.post<LoginResponse>('/api/auth/login', { email, password })
-        const t = data?.access_token
-        if (!t) throw new Error('Token tidak ditemukan pada respons login')
-        setToken(t)
+        await api.post<LoginResponse>('/api/auth/login', { email, password })
+        setIsAuthenticated(true)
         return true
     }
 
-    const logout = () => setToken(null)
+    const logout = async () => {
+        try {
+            await api.post('/api/auth/logout')
+        } catch (e) {
+            console.error('Logout failed', e)
+        }
+        setIsAuthenticated(false)
+    }
+
+    // Map isAuthenticated to token to avoid breaking contexts that check `if (token)`
+    const token = isAuthenticated ? "active" : null
 
     return <AuthContext.Provider value={{ token, login, logout }}>{children}</AuthContext.Provider>
 }

@@ -17,7 +17,7 @@ export default function Login() {
         setBusy(true)
         try {
             await login({ email, password })
-            navigate('/admin')
+            void navigate('/admin')
         } catch {
             setError('Login gagal. Periksa kembali email dan password Anda.')
         } finally {
@@ -29,7 +29,7 @@ export default function Login() {
         <Box sx={{ minHeight: '100vh', display: 'grid', placeItems: 'center' }}>
             <Paper sx={{ p: 3, width: 420, maxWidth: '90vw' }}>
                 <Typography variant="h6" gutterBottom>Admin Login</Typography>
-                <form onSubmit={submit}>
+                <form onSubmit={(e) => void submit(e)}>
                     <Stack spacing={2}>
                         <TextField label="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
                         <TextField label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />

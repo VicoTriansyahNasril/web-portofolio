@@ -26,7 +26,7 @@ export default function ProjectEdit({ mode }: ProjectEditProps) {
         }
 
         if (!id) {
-            navigate('/admin/projects')
+            void navigate('/admin/projects')
             return
         }
 
@@ -41,17 +41,17 @@ export default function ProjectEdit({ mode }: ProjectEditProps) {
             } catch (error: any) {
                 console.error("Fetch error:", error)
                 if (error.response && error.response.status === 404) {
-                    alert({ title: 'Not Found', text: 'Project with this ID does not exist.', icon: 'warning' })
+                    await alert({ title: 'Not Found', text: 'Project with this ID does not exist.', icon: 'warning' })
                 } else {
-                    alert({ title: 'Error', text: 'Failed to fetch project data.', icon: 'error' })
+                    await alert({ title: 'Error', text: 'Failed to fetch project data.', icon: 'error' })
                 }
-                navigate('/admin/projects', { replace: true })
+                void navigate('/admin/projects', { replace: true })
             } finally {
                 setLoading(false)
             }
         }
 
-        fetchProject()
+        void fetchProject()
     }, [id, isCreate, navigate])
 
     const handleSubmit = async (payload: any) => {
@@ -61,11 +61,11 @@ export default function ProjectEdit({ mode }: ProjectEditProps) {
             } else if (id) {
                 await projectAPI.update(parseInt(id, 10), payload)
             }
-            navigate('/admin/projects')
-            alert({ title: 'Success', text: 'Project saved successfully' })
+            void navigate('/admin/projects')
+            await alert({ title: 'Success', text: 'Project saved successfully' })
         } catch (error) {
             console.error(error)
-            alert({ title: 'Error', text: 'Failed to save project', icon: 'error' })
+            await alert({ title: 'Error', text: 'Failed to save project', icon: 'error' })
         }
     }
 
@@ -83,7 +83,7 @@ export default function ProjectEdit({ mode }: ProjectEditProps) {
         <ProjectForm
             initialData={initialData}
             onSubmit={handleSubmit}
-            onCancel={() => navigate('/admin/projects')}
+            onCancel={() => { void navigate('/admin/projects') }}
         />
     )
 }

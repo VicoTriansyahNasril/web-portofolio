@@ -26,17 +26,17 @@ export default function AdminExperiences() {
         }
     };
 
-    useEffect(() => { loadItems() }, []);
+    useEffect(() => { void loadItems() }, []);
 
     const handleDelete = async (item: Experience) => {
         const res = await confirm({ title: `Delete "${item.title}"?` });
         if (res.isConfirmed) {
             try {
                 await experienceAPI.delete(item.id);
-                alert({ title: 'Success', text: 'Deleted successfully.' });
-                loadItems();
+                await alert({ title: 'Success', text: 'Deleted successfully.' });
+                await loadItems();
             } catch {
-                alert({ title: 'Error', icon: 'error', text: 'Failed to delete.' });
+                await alert({ title: 'Error', icon: 'error', text: 'Failed to delete.' });
             }
         }
     };
@@ -50,10 +50,10 @@ export default function AdminExperiences() {
             }
             setIsModalOpen(false);
             setEditingItem(null);
-            alert({ title: 'Success', text: 'Saved successfully.' });
-            loadItems();
+            await alert({ title: 'Success', text: 'Saved successfully.' });
+            await loadItems();
         } catch {
-            alert({ title: 'Error', icon: 'error', text: 'Failed to save.' });
+            await alert({ title: 'Error', icon: 'error', text: 'Failed to save.' });
         }
     };
 
@@ -78,7 +78,7 @@ export default function AdminExperiences() {
                             </Box>
                             <Stack direction="row" spacing={1}>
                                 <IconButton onClick={() => { setEditingItem(item); setIsModalOpen(true) }}><EditIcon /></IconButton>
-                                <IconButton color="error" onClick={() => handleDelete(item)}><DeleteIcon /></IconButton>
+                                <IconButton color="error" onClick={() => void handleDelete(item)}><DeleteIcon /></IconButton>
                             </Stack>
                         </Paper>
                     ))}

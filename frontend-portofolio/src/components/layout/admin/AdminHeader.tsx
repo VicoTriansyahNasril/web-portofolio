@@ -23,7 +23,7 @@ export default function AdminHeader() {
     const handleLogout = async () => {
         const ok = await confirm({ title: 'Logout?', text: 'Are you sure you want to logout?', icon: 'warning', confirmText: 'Logout' })
         if (ok.isConfirmed) {
-            logout()
+            void logout()
             navigate('/admin/login', { replace: true })
         }
     }

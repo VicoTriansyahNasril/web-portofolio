@@ -1,10 +1,16 @@
 import { SWRResponse } from 'swr'
 
 type Mutator = (key: string) => Promise<SWRResponse<any, any>[] | undefined>
+type CountListener = (count: number) => void
 
 let ws: WebSocket | null = null
 let reconnectTimeout: NodeJS.Timeout
 let isConnecting = false
+const countListeners: Set<CountListener> = new Set()
+
+const notifyCountListeners = (count: number) => {
+    countListeners.forEach(listener => listener(count))
+}
 
 const connect = (mutate: Mutator) => {
     if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
@@ -33,9 +39,16 @@ const connect = (mutate: Mutator) => {
     ws.onmessage = (event) => {
         try {
             const message = JSON.parse(event.data)
+
             if (message.event === 'change' && message.key) {
-                console.log('[WS] Cache Invalidation:', message.key)
-                mutate(message.key)
+                console.log('♻️ [WS] Live Update Triggered for:', message.key)
+                mutate(message.key).catch(err => console.error("Mutate error:", err))
+            }
+            if (message.event === 'visitor_count' && message.payload) {
+                const count = parseInt(message.payload, 10)
+                if (!isNaN(count)) {
+                    notifyCountListeners(count)
+                }
             }
         } catch (e) {
             console.error('[WS] Parse error', e)
@@ -63,4 +76,11 @@ export const initWebSocket = (mutate: Mutator) => {
     window.addEventListener('beforeunload', () => {
         if (ws) ws.close(1000)
     })
+}
+
+export const subscribeToVisitorCount = (callback: CountListener) => {
+    countListeners.add(callback)
+    return () => {
+        countListeners.delete(callback)
+    }
 }

@@ -17,12 +17,12 @@ export default function AdminProfile() {
                 setProfile(profileData);
             } catch (error) {
                 console.error("Failed to load profile:", error);
-                alert({ title: 'Error', text: 'Could not load profile data.', icon: 'error' });
+                void alert({ title: 'Error', text: 'Could not load profile data.', icon: 'error' });
             } finally {
                 setLoading(false);
             }
         };
-        loadData();
+        void loadData();
     }, []);
 
     const handleSubmit = async (data: Partial<Profile>) => {
@@ -31,10 +31,10 @@ export default function AdminProfile() {
 
             setProfile(prev => prev ? { ...prev, ...data } as Profile : null);
 
-            alert({ title: 'Success', text: 'Profile updated successfully.' });
+            void alert({ title: 'Success', text: 'Profile updated successfully.' });
         } catch (error) {
             console.error(error);
-            alert({ title: 'Error', text: 'Failed to update profile.', icon: 'error' });
+            void alert({ title: 'Error', text: 'Failed to update profile.', icon: 'error' });
         }
     };
 

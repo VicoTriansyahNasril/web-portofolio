@@ -1,10 +1,13 @@
-import { useEffect, useState } from 'react'
-import { Box, Typography, Paper, CircularProgress, Alert, Button } from '@mui/material'
+import { useState } from 'react'
+import { Box, Typography, Paper, CircularProgress, Alert, Button, Stack, Chip } from '@mui/material'
 import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid'
 import { format, parseISO, isValid } from 'date-fns'
+import useSWR from 'swr'
+import CircleIcon from '@mui/icons-material/Circle'
 import { analyticsAPI } from '../api/analyticsAPI'
 import { VisitorSummary, VisitorDetail } from '../types'
 import VisitorDetailModal from '../components/VisitorDetailModal'
+import { useActiveVisitors } from '@/hooks/useActiveVisitors'
 
 const formatDate = (dateString: string): string => {
     try {
@@ -17,29 +20,18 @@ const formatDate = (dateString: string): string => {
 }
 
 export default function AnalyticsPage() {
-    const [visitors, setVisitors] = useState<VisitorSummary[]>([])
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState('')
+    const { data: visitors, error, isLoading } = useSWR<VisitorSummary[]>(
+        '/api/admin/analytics/visitors',
+        analyticsAPI.getSummaries,
+        {
+            dedupingInterval: 0,
+            revalidateOnFocus: false
+        }
+    )
+    const activeVisitors = useActiveVisitors()
+
     const [selectedDetail, setSelectedDetail] = useState<VisitorDetail | null>(null)
     const [modalOpen, setModalOpen] = useState(false)
-
-    useEffect(() => {
-        loadVisitors()
-    }, [])
-
-    const loadVisitors = async () => {
-        setLoading(true)
-        setError('')
-        try {
-            const data = await analyticsAPI.getSummaries()
-            setVisitors(data)
-        } catch (err) {
-            console.error(err)
-            setError('Failed to load analytics data.')
-        } finally {
-            setLoading(false)
-        }
-    }
 
     const handleViewDetails = async (visitorHash: string) => {
         try {
@@ -48,7 +40,6 @@ export default function AnalyticsPage() {
             setModalOpen(true)
         } catch (err) {
             console.error(err)
-            alert('Failed to load details')
         }
     }
 
@@ -90,19 +81,32 @@ export default function AnalyticsPage() {
         },
     ]
 
-    const rows = visitors.map((v) => ({
+    const rows = visitors?.map((v) => ({
         id: v.visitorNumber,
         ...v
-    }))
+    })) || []
 
-    if (loading) {
+    if (isLoading) {
         return <Box sx={{ display: 'grid', placeItems: 'center', minHeight: 400 }}><CircularProgress /></Box>
     }
 
     return (
         <Box>
-            <Typography variant="h4" fontWeight={800} mb={3}>Visitor Analytics</Typography>
-            {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+            <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
+                <Typography variant="h4" fontWeight={800}>Visitor Analytics</Typography>
+                <Chip
+                    icon={<CircleIcon sx={{ color: '#10B981 !important', fontSize: '12px !important' }} />}
+                    label={`${activeVisitors} Active Now`}
+                    sx={{
+                        fontWeight: 700,
+                        bgcolor: 'rgba(16, 185, 129, 0.1)',
+                        color: '#10B981',
+                        border: '1px solid rgba(16, 185, 129, 0.2)'
+                    }}
+                />
+            </Stack>
+
+            {error && <Alert severity="error" sx={{ mb: 2 }}>Failed to load analytics data.</Alert>}
 
             <Paper sx={{ height: 600, width: '100%' }}>
                 <DataGrid

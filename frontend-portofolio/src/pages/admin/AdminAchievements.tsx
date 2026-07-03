@@ -1,15 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Box, Button, Paper, Stack, Typography, CircularProgress, IconButton } from '@mui/material'
+import { Box, Button, Paper, Stack, Typography, CircularProgress } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
-import EditIcon from '@mui/icons-material/Edit'
-import DeleteIcon from '@mui/icons-material/Delete'
-import DragIndicatorIcon from '@mui/icons-material/DragIndicator'
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core'
-import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
 import { achievementAPI } from '@/features/achievements/api/achievementAPI'
 import { Achievement, AchievementDTO } from '@/features/achievements/types'
 import AchievementFormModal from '@/features/achievements/components/AchievementFormModal'
+import SortableList from '@/components/ui/SortableList'
 import { confirm, alert } from '@/utils/confirm'
 
 const formatDate = (dateStr: string) => {
@@ -20,44 +15,11 @@ const formatDate = (dateStr: string) => {
     }
 }
 
-interface SortableItemProps {
-    item: Achievement
-    onEdit: (item: Achievement) => void
-    onDelete: (item: Achievement) => void
-}
-
-function SortableItem({ item, onEdit, onDelete }: SortableItemProps) {
-    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: item.id })
-    const style = { transform: CSS.Transform.toString(transform), transition }
-
-    return (
-        <Paper ref={setNodeRef} style={style} sx={{ p: 2, display: 'flex', alignItems: 'center', touchAction: 'none' }}>
-            <Box {...attributes} {...listeners} sx={{ cursor: 'grab', color: 'text.secondary', mr: 1.5 }}>
-                <DragIndicatorIcon />
-            </Box>
-            <Box sx={{ flex: 1 }}>
-                <Typography variant="h6" fontWeight={600}>{item.title}</Typography>
-                <Typography variant="body1" color="text.secondary">{item.issuer}</Typography>
-                <Typography variant="caption" color="text.secondary">{formatDate(item.date)}</Typography>
-            </Box>
-            <Stack direction="row" spacing={1}>
-                <IconButton onClick={() => onEdit(item)}><EditIcon /></IconButton>
-                <IconButton color="error" onClick={() => onDelete(item)}><DeleteIcon /></IconButton>
-            </Stack>
-        </Paper>
-    )
-}
-
 export default function AdminAchievements() {
     const [items, setItems] = useState<Achievement[]>([])
     const [loading, setLoading] = useState(true)
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [editingItem, setEditingItem] = useState<Achievement | null>(null)
-
-    const sensors = useSensors(
-        useSensor(PointerSensor),
-        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-    )
 
     const loadItems = async () => {
         setLoading(true)
@@ -66,23 +28,23 @@ export default function AdminAchievements() {
             setItems(data)
         } catch (err) {
             console.error(err)
-            alert({ title: 'Error', text: 'Failed to load achievements.', icon: 'error' })
+            await alert({ title: 'Error', text: 'Failed to load achievements.', icon: 'error' })
         } finally {
             setLoading(false)
         }
     }
 
-    useEffect(() => { loadItems() }, [])
+    useEffect(() => { void loadItems() }, [])
 
     const handleDelete = async (item: Achievement) => {
         const res = await confirm({ title: `Delete "${item.title}"?` })
         if (res.isConfirmed) {
             try {
                 await achievementAPI.delete(item.id)
-                alert({ title: 'Success', text: 'Deleted successfully.' })
-                loadItems()
+                await alert({ title: 'Success', text: 'Deleted successfully.' })
+                await loadItems()
             } catch {
-                alert({ title: 'Error', icon: 'error', text: 'Failed to delete.' })
+                await alert({ title: 'Error', icon: 'error', text: 'Failed to delete.' })
             }
         }
     }
@@ -105,25 +67,19 @@ export default function AdminAchievements() {
             }
             setIsModalOpen(false)
             setEditingItem(null)
-            alert({ title: 'Success', text: 'Saved successfully.' })
-            loadItems()
+            await alert({ title: 'Success', text: 'Saved successfully.' })
+            await loadItems()
         } catch {
-            alert({ title: 'Error', icon: 'error', text: 'Failed to save.' })
+            await alert({ title: 'Error', icon: 'error', text: 'Failed to save.' })
         }
     }
 
-    const handleDragEnd = async (event: DragEndEvent) => {
-        const { active, over } = event
-        if (over && active.id !== over.id) {
-            const oldIndex = items.findIndex(item => item.id === active.id)
-            const newIndex = items.findIndex(item => item.id === over.id)
-            const newOrder = arrayMove(items, oldIndex, newIndex)
-            setItems(newOrder)
-            try {
-                await achievementAPI.reorder(newOrder.map((item, index) => ({ id: item.id, sort_order: index })))
-            } catch {
-                loadItems()
-            }
+    const handleReorder = async (newOrder: Achievement[]) => {
+        setItems(newOrder)
+        try {
+            await achievementAPI.reorder(newOrder.map((item, index) => ({ id: item.id, sort_order: index })))
+        } catch {
+            await loadItems()
         }
     }
 
@@ -144,15 +100,20 @@ export default function AdminAchievements() {
                 </Paper>
             )}
 
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
-                    <Stack spacing={2}>
-                        {items.map(item => (
-                            <SortableItem key={item.id} item={item} onEdit={(i) => { setEditingItem(i); setIsModalOpen(true) }} onDelete={handleDelete} />
-                        ))}
-                    </Stack>
-                </SortableContext>
-            </DndContext>
+            <SortableList
+                items={items}
+                getId={(i) => i.id}
+                onReorder={handleReorder}
+                onEdit={(i) => { setEditingItem(i); setIsModalOpen(true) }}
+                onDelete={(i) => void handleDelete(i)}
+                renderItem={(item) => (
+                    <>
+                        <Typography variant="h6" fontWeight={600}>{item.title}</Typography>
+                        <Typography variant="body1" color="text.secondary">{item.issuer}</Typography>
+                        <Typography variant="caption" color="text.secondary">{formatDate(item.date)}</Typography>
+                    </>
+                )}
+            />
 
             <AchievementFormModal open={isModalOpen} onClose={() => setIsModalOpen(false)} onSubmit={handleSubmit} initialData={editingItem} />
         </Box>

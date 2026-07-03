@@ -75,7 +75,6 @@ function WebSocketInitializer() {
 
   useEffect(() => {
     initWebSocket((key) => {
-      console.log('♻️ Live Update:', key)
       return mutate(key)
     })
   }, [mutate])
@@ -103,12 +102,6 @@ function App() {
   }, [mode, isAdminPage])
 
   useEffect(() => {
-    // ✅ Route '/' TIDAK di-track di sini.
-    //    Home.tsx sudah menangani tracking tiap section (/, /projects, /about)
-    //    via useScrollSectionTracker hook (IntersectionObserver + MutationObserver).
-    //
-    //    Hanya halaman public non-home yang di-track di sini,
-    //    contoh: /projects/:slug (detail project)
     if (!isAdminPage && !isHomePage) {
       trackPageVisit(location.pathname)
     }

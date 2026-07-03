@@ -5,13 +5,14 @@ export const api = axios.create({
     headers: {
         'Content-Type': 'application/json',
     },
+	withCredentials: true, // Allow cookies to be sent with requests
 })
 
 api.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
-        const token = localStorage.getItem('admin-token')
-        if (token && config.headers) {
-            config.headers.Authorization = `Bearer ${token}`
+        // CSRF Protection Header
+        if (config.headers) {
+            config.headers['X-Requested-With'] = 'XMLHttpRequest'
         }
         return config
     },
@@ -21,8 +22,7 @@ api.interceptors.request.use(
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response?.status === 401) {
-            localStorage.removeItem('admin-token')
+        if (error.response?.status === 401 || error.response?.status === 403) {
             if (!window.location.pathname.includes('/login')) {
                 window.location.href = '/admin/login'
             }
