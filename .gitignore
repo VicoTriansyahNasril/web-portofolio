@@ -27,3 +27,7 @@ Thumbs.db
 *.user
 *.suo
 .vs/
+storage/
+coverage/
+.eslintcache
+.gemini/
