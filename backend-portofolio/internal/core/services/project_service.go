@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"backend-portofolio/internal/cache"
 	"backend-portofolio/internal/core/domain"
 	"backend-portofolio/internal/core/ports"
@@ -69,25 +70,25 @@ func (s *projectService) invalidateCache(slug string) {
 	}
 }
 
-func (s *projectService) GetPublicList() ([]domain.Project, error) {
-	return s.repo.FindAllPublic()
+func (s *projectService) GetPublicList(ctx context.Context) ([]domain.Project, error) {
+	return s.repo.FindAllPublic(ctx)
 }
 
-func (s *projectService) GetPublicBySlug(slug string) (*domain.Project, error) {
+func (s *projectService) GetPublicBySlug(ctx context.Context, slug string) (*domain.Project, error) {
 	slug = s.normSlug(slug)
-	return s.repo.FindBySlug(slug)
+	return s.repo.FindBySlug(ctx, slug)
 }
 
-func (s *projectService) GetAdminList() ([]domain.Project, error) {
-	return s.repo.FindAllAdmin()
+func (s *projectService) GetAdminList(ctx context.Context) ([]domain.Project, error) {
+	return s.repo.FindAllAdmin(ctx)
 }
 
-func (s *projectService) GetAdminByID(id uint) (*domain.Project, error) {
-	return s.repo.FindByID(id)
+func (s *projectService) GetAdminByID(ctx context.Context, id uint) (*domain.Project, error) {
+	return s.repo.FindByID(ctx, id)
 }
 
-func (s *projectService) CreateProject(req dto.CreateProjectReq) (*domain.Project, error) {
-	maxOrder, err := s.repo.GetMaxSortOrder()
+func (s *projectService) CreateProject(ctx context.Context, req dto.CreateProjectReq) (*domain.Project, error) {
+	maxOrder, err := s.repo.GetMaxSortOrder(ctx)
 	if err != nil {
 		log.Printf("Warning: GetMaxSortOrder failed: %v", err)
 		maxOrder = 0
@@ -121,7 +122,7 @@ func (s *projectService) CreateProject(req dto.CreateProjectReq) (*domain.Projec
 		p.Status = "published"
 	}
 
-	if err := s.repo.Create(&p); err != nil {
+	if err := s.repo.Create(ctx, &p); err != nil {
 		log.Printf("DB Create Error: %v | Slug: %s", err, p.Slug)
 		return nil, err
 	}
@@ -129,8 +130,8 @@ func (s *projectService) CreateProject(req dto.CreateProjectReq) (*domain.Projec
 	return &p, nil
 }
 
-func (s *projectService) UpdateProject(id uint, req dto.UpdateProjectReq) error {
-	p, err := s.repo.FindByID(id)
+func (s *projectService) UpdateProject(ctx context.Context, id uint, req dto.UpdateProjectReq) error {
+	p, err := s.repo.FindByID(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -182,7 +183,7 @@ func (s *projectService) UpdateProject(id uint, req dto.UpdateProjectReq) error 
 	}
 	p.UpdatedAt = time.Now()
 
-	if err := s.repo.Update(p); err != nil {
+	if err := s.repo.Update(ctx, p); err != nil {
 		log.Printf("DB Update Error: %v", err)
 		return err
 	}
@@ -190,22 +191,24 @@ func (s *projectService) UpdateProject(id uint, req dto.UpdateProjectReq) error 
 	return nil
 }
 
-func (s *projectService) DeleteProject(id uint) error {
-	if err := s.repo.Delete(id); err != nil {
+func (s *projectService) DeleteProject(ctx context.Context, id uint) error {
+	if err := s.repo.Delete(ctx, id); err != nil {
 		return err
 	}
 	s.invalidateCache("")
 	return nil
 }
 
-func (s *projectService) ReorderProjects(req dto.ReorderReq) error {
+func (s *projectService) ReorderProjects(ctx context.Context, req dto.ReorderReq) error {
 	now := time.Now()
 	for _, o := range req.Orders {
-		p, err := s.repo.FindByID(o.ID)
+		p, err := s.repo.FindByID(ctx, o.ID)
 		if err == nil {
 			p.SortOrder = &o.SortOrder
 			p.UpdatedAt = now
-			_ = s.repo.Update(p)
+			if err := s.repo.Update(ctx, p); err != nil {
+				log.Printf("Failed to reorder project ID %d: %v", o.ID, err)
+			}
 		}
 	}
 	s.invalidateCache("")

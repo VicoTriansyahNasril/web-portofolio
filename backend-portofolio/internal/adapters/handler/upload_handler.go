@@ -16,7 +16,7 @@ func NewUploadHandler(svc ports.UploadService) *UploadHandler {
 }
 
 func (h *UploadHandler) GetSignature(c *gin.Context) {
-	resp, err := h.svc.GenerateSignature()
+	resp, err := h.svc.GenerateSignature(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "signature generation failed"})
 		return

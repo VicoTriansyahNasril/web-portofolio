@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"backend-portofolio/internal/cache"
 	"backend-portofolio/internal/core/domain"
 	"backend-portofolio/internal/core/ports"
@@ -25,7 +26,7 @@ func (s *profileService) invalidateCache() {
 	hub.BroadcastEvent("change", "/api/profile")
 }
 
-func (s *profileService) GetPublicProfile() (*domain.Profile, error) {
+func (s *profileService) GetPublicProfile(ctx context.Context) (*domain.Profile, error) {
 	cached, err := cache.Get(publicProfileCacheKey)
 	if err == nil {
 		var p domain.Profile
@@ -34,7 +35,7 @@ func (s *profileService) GetPublicProfile() (*domain.Profile, error) {
 		}
 	}
 
-	p, err := s.repo.Get()
+	p, err := s.repo.Get(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -44,16 +45,16 @@ func (s *profileService) GetPublicProfile() (*domain.Profile, error) {
 	return p, nil
 }
 
-func (s *profileService) UpdateProfile(reqProfile domain.Profile, reqSocials []domain.SocialLink) error {
-	existing, err := s.repo.Get()
+func (s *profileService) UpdateProfile(ctx context.Context, reqProfile domain.Profile, reqSocials []domain.SocialLink) error {
+	existing, err := s.repo.Get(ctx)
 	if err == nil && existing != nil {
 		reqProfile.ID = existing.ID
 	}
 
-	if err := s.repo.Upsert(&reqProfile); err != nil {
+	if err := s.repo.Upsert(ctx, &reqProfile); err != nil {
 		return err
 	}
-	if err := s.repo.UpdateSocialLinks(reqProfile.ID, reqSocials); err != nil {
+	if err := s.repo.UpdateSocialLinks(ctx, reqProfile.ID, reqSocials); err != nil {
 		return err
 	}
 	s.invalidateCache()

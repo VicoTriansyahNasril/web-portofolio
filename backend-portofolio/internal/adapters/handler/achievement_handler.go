@@ -18,7 +18,7 @@ func NewAchievementHandler(svc ports.AchievementService) *AchievementHandler {
 }
 
 func (h *AchievementHandler) ListPublic(c *gin.Context) {
-	items, err := h.svc.GetPublicAchievements()
+	items, err := h.svc.GetPublicAchievements(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
@@ -27,7 +27,7 @@ func (h *AchievementHandler) ListPublic(c *gin.Context) {
 }
 
 func (h *AchievementHandler) ListAdmin(c *gin.Context) {
-	items, err := h.svc.GetAdminAchievements()
+	items, err := h.svc.GetAdminAchievements(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
@@ -41,7 +41,7 @@ func (h *AchievementHandler) Create(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payload"})
 		return
 	}
-	if err := h.svc.CreateAchievement(req); err != nil {
+	if err := h.svc.CreateAchievement(c.Request.Context(), req); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -60,7 +60,7 @@ func (h *AchievementHandler) Update(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payload"})
 		return
 	}
-	if err := h.svc.UpdateAchievement(uint(id), req); err != nil {
+	if err := h.svc.UpdateAchievement(c.Request.Context(), uint(id), req); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -74,7 +74,7 @@ func (h *AchievementHandler) Delete(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
 		return
 	}
-	if err := h.svc.DeleteAchievement(uint(id)); err != nil {
+	if err := h.svc.DeleteAchievement(c.Request.Context(), uint(id)); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -92,7 +92,7 @@ func (h *AchievementHandler) Reorder(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid body"})
 		return
 	}
-	if err := h.svc.ReorderAchievements(req.Orders); err != nil {
+	if err := h.svc.ReorderAchievements(c.Request.Context(), req.Orders); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

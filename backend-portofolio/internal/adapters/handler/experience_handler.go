@@ -18,7 +18,7 @@ func NewExperienceHandler(svc ports.ExperienceService) *ExperienceHandler {
 }
 
 func (h *ExperienceHandler) ListPublic(c *gin.Context) {
-	items, err := h.svc.GetPublicExperiences()
+	items, err := h.svc.GetPublicExperiences(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
@@ -27,7 +27,7 @@ func (h *ExperienceHandler) ListPublic(c *gin.Context) {
 }
 
 func (h *ExperienceHandler) ListAdmin(c *gin.Context) {
-	items, err := h.svc.GetAdminExperiences()
+	items, err := h.svc.GetAdminExperiences(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
@@ -41,7 +41,7 @@ func (h *ExperienceHandler) Create(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payload"})
 		return
 	}
-	if err := h.svc.CreateExperience(req); err != nil {
+	if err := h.svc.CreateExperience(c.Request.Context(), req); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -60,7 +60,7 @@ func (h *ExperienceHandler) Update(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payload"})
 		return
 	}
-	if err := h.svc.UpdateExperience(uint(id), req); err != nil {
+	if err := h.svc.UpdateExperience(c.Request.Context(), uint(id), req); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -74,7 +74,7 @@ func (h *ExperienceHandler) Delete(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
 		return
 	}
-	if err := h.svc.DeleteExperience(uint(id)); err != nil {
+	if err := h.svc.DeleteExperience(c.Request.Context(), uint(id)); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

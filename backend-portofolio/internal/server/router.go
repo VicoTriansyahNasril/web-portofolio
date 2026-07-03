@@ -49,7 +49,9 @@ func SetupRouter(cfg *config.Config, dbConn *gorm.DB) *gin.Engine {
 	r.Use(gin.Recovery())
 	r.Use(gin.Logger())
 
+	r.Use(middleware.SecurityHeaders())
 	r.Use(middleware.CORSMiddleware(cfg.CORSOrigins))
+	r.Use(middleware.GlobalLimit)
 	r.Use(gzip.Gzip(gzip.DefaultCompression))
 
 	r.Match([]string{"GET", "HEAD"}, "/health", healthCheck)
@@ -97,9 +99,10 @@ func SetupRouter(cfg *config.Config, dbConn *gorm.DB) *gin.Engine {
 	}
 
 	r.POST("/api/track", analyticsHdl.TrackVisit)
-	r.POST("/api/auth/login", authHdl.Login)
+	r.POST("/api/auth/login", middleware.LoginLimit, authHdl.Login)
+	r.POST("/api/auth/logout", authHdl.Logout)
 
-	admin := r.Group("/api/admin", middleware.JWTAuth(cfg.JWTSecret))
+	admin := r.Group("/api/admin", middleware.JWTAuth(cfg.JWTSecret), middleware.CSRFProtection())
 	{
 		admin.GET("/projects", projectHdl.AdminList)
 		admin.GET("/projects/:id", projectHdl.GetAdminByID)

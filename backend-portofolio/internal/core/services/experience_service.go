@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"backend-portofolio/internal/cache"
 	"backend-portofolio/internal/core/domain"
 	"backend-portofolio/internal/core/ports"
@@ -24,7 +25,7 @@ func (s *experienceService) invalidateCache() {
 	hub.BroadcastEvent("change", "/api/experiences")
 }
 
-func (s *experienceService) GetPublicExperiences() ([]domain.Experience, error) {
+func (s *experienceService) GetPublicExperiences(ctx context.Context) ([]domain.Experience, error) {
 	const cacheKey = "public_experiences"
 	cached, err := cache.Get(cacheKey)
 	if err == nil {
@@ -34,7 +35,7 @@ func (s *experienceService) GetPublicExperiences() ([]domain.Experience, error) 
 		}
 	}
 
-	items, err := s.repo.ListPublic()
+	items, err := s.repo.ListPublic(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -44,11 +45,11 @@ func (s *experienceService) GetPublicExperiences() ([]domain.Experience, error) 
 	return items, nil
 }
 
-func (s *experienceService) GetAdminExperiences() ([]domain.Experience, error) {
-	return s.repo.ListAdmin()
+func (s *experienceService) GetAdminExperiences(ctx context.Context) ([]domain.Experience, error) {
+	return s.repo.ListAdmin(ctx)
 }
 
-func (s *experienceService) CreateExperience(req dto.ExperienceReq) error {
+func (s *experienceService) CreateExperience(ctx context.Context, req dto.ExperienceReq) error {
 	startDate, err := time.Parse(time.RFC3339, req.StartDate)
 	if err != nil {
 		return err
@@ -76,14 +77,14 @@ func (s *experienceService) CreateExperience(req dto.ExperienceReq) error {
 		UpdatedAt:   time.Now(),
 	}
 
-	if err := s.repo.Create(&exp); err != nil {
+	if err := s.repo.Create(ctx, &exp); err != nil {
 		return err
 	}
 	s.invalidateCache()
 	return nil
 }
 
-func (s *experienceService) UpdateExperience(id uint, req dto.ExperienceReq) error {
+func (s *experienceService) UpdateExperience(ctx context.Context, id uint, req dto.ExperienceReq) error {
 	startDate, err := time.Parse(time.RFC3339, req.StartDate)
 	if err != nil {
 		return err
@@ -111,15 +112,15 @@ func (s *experienceService) UpdateExperience(id uint, req dto.ExperienceReq) err
 		UpdatedAt:   time.Now(),
 	}
 
-	if err := s.repo.Update(&exp); err != nil {
+	if err := s.repo.Update(ctx, &exp); err != nil {
 		return err
 	}
 	s.invalidateCache()
 	return nil
 }
 
-func (s *experienceService) DeleteExperience(id uint) error {
-	if err := s.repo.Delete(id); err != nil {
+func (s *experienceService) DeleteExperience(ctx context.Context, id uint) error {
+	if err := s.repo.Delete(ctx, id); err != nil {
 		return err
 	}
 	s.invalidateCache()

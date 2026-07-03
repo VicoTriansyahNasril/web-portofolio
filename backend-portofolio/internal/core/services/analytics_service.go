@@ -1,8 +1,10 @@
 package services
 
 import (
+	"context"
 	"backend-portofolio/internal/core/domain"
 	"backend-portofolio/internal/core/ports"
+	"backend-portofolio/internal/websocket"
 	"crypto/sha256"
 	"encoding/base64"
 	"sort"
@@ -17,7 +19,7 @@ func NewAnalyticsService(repo ports.AnalyticsRepository) ports.AnalyticsService 
 	return &analyticsService{repo: repo}
 }
 
-func (s *analyticsService) TrackVisitor(ip, userAgent, path string) error {
+func (s *analyticsService) TrackVisitor(ctx context.Context, ip, userAgent, path string) error {
 	const salt = "your-very-secret-static-salt-for-hashing-visitors"
 	rawIdentifier := ip + "-" + userAgent + "-" + salt
 	hash := sha256.Sum256([]byte(rawIdentifier))
@@ -28,11 +30,17 @@ func (s *analyticsService) TrackVisitor(ip, userAgent, path string) error {
 		VisitorHash: visitorHash,
 		Timestamp:   time.Now(),
 	}
-	return s.repo.RecordVisit(&visit)
+
+	err := s.repo.RecordVisit(ctx, &visit)
+	if err == nil {
+		hub := websocket.GetHub()
+		hub.BroadcastEvent("change", "/api/admin/analytics/visitors")
+	}
+	return err
 }
 
-func (s *analyticsService) GetVisitorsSummary() ([]map[string]interface{}, error) {
-	rawSummaries, err := s.repo.GetVisitorSummaries()
+func (s *analyticsService) GetVisitorsSummary(ctx context.Context) ([]map[string]interface{}, error) {
+	rawSummaries, err := s.repo.GetVisitorSummaries(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -86,8 +94,8 @@ func (s *analyticsService) GetVisitorsSummary() ([]map[string]interface{}, error
 	return result, nil
 }
 
-func (s *analyticsService) GetVisitorDetail(hash string) (map[string]interface{}, error) {
-	visits, err := s.repo.GetVisitsByHash(hash)
+func (s *analyticsService) GetVisitorDetail(ctx context.Context, hash string) (map[string]interface{}, error) {
+	visits, err := s.repo.GetVisitsByHash(ctx, hash)
 	if err != nil {
 		return nil, err
 	}

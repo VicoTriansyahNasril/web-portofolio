@@ -15,24 +15,36 @@ var Rdb *redis.Client
 func Init(cfg config.Config) {
 	opt, err := redis.ParseURL(cfg.RedisURL)
 	if err != nil {
-		log.Fatalf("Could not parse Redis URL: %v", err)
+		log.Printf("Warning: Could not parse Redis URL, caching disabled: %v", err)
+		return
 	}
 	Rdb = redis.NewClient(opt)
 	if err := Rdb.Ping(Ctx).Err(); err != nil {
-		log.Fatalf("Could not connect to Redis: %v", err)
+		log.Printf("Warning: Could not connect to Redis, caching disabled: %v", err)
+		Rdb = nil
+		return
 	}
 	log.Println("Successfully connected to Redis.")
 }
 
 func Get(key string) (string, error) {
+	if Rdb == nil {
+		return "", redis.Nil
+	}
 	return Rdb.Get(Ctx, key).Result()
 }
 
 func Set(key string, value interface{}, expiration time.Duration) error {
+	if Rdb == nil {
+		return nil
+	}
 	return Rdb.Set(Ctx, key, value, expiration).Err()
 }
 
 func DelByPattern(pattern string) error {
+	if Rdb == nil {
+		return nil
+	}
 	var cursor uint64
 	var err error
 	for {

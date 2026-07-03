@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"backend-portofolio/internal/cache"
 	"backend-portofolio/internal/core/domain"
 	"backend-portofolio/internal/core/ports"
@@ -30,7 +31,7 @@ func (s *skillService) invalidateCache() {
 	hub.BroadcastEvent("change", "/api/profile")
 }
 
-func (s *skillService) GetPublicSkills() ([]domain.Skill, error) {
+func (s *skillService) GetPublicSkills(ctx context.Context) ([]domain.Skill, error) {
 	const cacheKey = "public_skills_sorted"
 	cached, err := cache.Get(cacheKey)
 	if err == nil {
@@ -40,12 +41,12 @@ func (s *skillService) GetPublicSkills() ([]domain.Skill, error) {
 		}
 	}
 
-	skills, err := s.repo.ListPublic()
+	skills, err := s.repo.ListPublic(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	profile, err := s.profileRepo.Get()
+	profile, err := s.profileRepo.Get(ctx)
 	if err == nil && profile.SkillGroupOrder != "" {
 		var groupOrder []string
 		if json.Unmarshal([]byte(profile.SkillGroupOrder), &groupOrder) == nil && len(groupOrder) > 0 {
@@ -90,40 +91,40 @@ func (s *skillService) GetPublicSkills() ([]domain.Skill, error) {
 	return skills, nil
 }
 
-func (s *skillService) GetAdminSkills() ([]domain.Skill, error) {
-	return s.repo.ListAdmin()
+func (s *skillService) GetAdminSkills(ctx context.Context) ([]domain.Skill, error) {
+	return s.repo.ListAdmin(ctx)
 }
 
-func (s *skillService) CreateSkill(reqSkill domain.Skill) error {
-	if err := s.repo.Create(&reqSkill); err != nil {
+func (s *skillService) CreateSkill(ctx context.Context, reqSkill domain.Skill) error {
+	if err := s.repo.Create(ctx, &reqSkill); err != nil {
 		return err
 	}
 	s.invalidateCache()
 	return nil
 }
 
-func (s *skillService) UpdateSkill(id uint, reqSkill domain.Skill) error {
+func (s *skillService) UpdateSkill(ctx context.Context, id uint, reqSkill domain.Skill) error {
 	reqSkill.ID = id
-	if err := s.repo.Update(&reqSkill); err != nil {
+	if err := s.repo.Update(ctx, &reqSkill); err != nil {
 		return err
 	}
 	s.invalidateCache()
 	return nil
 }
 
-func (s *skillService) DeleteSkill(id uint) error {
-	if err := s.repo.Delete(id); err != nil {
+func (s *skillService) DeleteSkill(ctx context.Context, id uint) error {
+	if err := s.repo.Delete(ctx, id); err != nil {
 		return err
 	}
 	s.invalidateCache()
 	return nil
 }
 
-func (s *skillService) ReorderSkills(orders []struct {
+func (s *skillService) ReorderSkills(ctx context.Context, orders []struct {
 	ID        uint `json:"id"`
 	SortOrder int  `json:"sort_order"`
 }) error {
-	if err := s.repo.Reorder(orders); err != nil {
+	if err := s.repo.Reorder(ctx, orders); err != nil {
 		return err
 	}
 	s.invalidateCache()

@@ -40,7 +40,7 @@ func (h *ProjectHandler) ListPublic(c *gin.Context) {
 		return
 	}
 
-	items, err := h.svc.GetPublicList()
+	items, err := h.svc.GetPublicList(c.Request.Context())
 	if err != nil {
 		log.Printf("[ProjectHandler] ListPublic Error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
@@ -85,7 +85,7 @@ func (h *ProjectHandler) GetBySlug(c *gin.Context) {
 		return
 	}
 
-	p, err := h.svc.GetPublicBySlug(slug)
+	p, err := h.svc.GetPublicBySlug(c.Request.Context(), slug)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
 		return
@@ -118,7 +118,7 @@ func (h *ProjectHandler) GetBySlug(c *gin.Context) {
 }
 
 func (h *ProjectHandler) AdminList(c *gin.Context) {
-	items, err := h.svc.GetAdminList()
+	items, err := h.svc.GetAdminList(c.Request.Context())
 	if err != nil {
 		log.Printf("[ProjectHandler] AdminList Error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "db error"})
@@ -159,7 +159,7 @@ func (h *ProjectHandler) GetAdminByID(c *gin.Context) {
 		return
 	}
 
-	p, err := h.svc.GetAdminByID(uint(id))
+	p, err := h.svc.GetAdminByID(c.Request.Context(), uint(id))
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
@@ -201,7 +201,7 @@ func (h *ProjectHandler) Create(c *gin.Context) {
 		return
 	}
 
-	p, err := h.svc.CreateProject(req)
+	p, err := h.svc.CreateProject(c.Request.Context(), req)
 	if err != nil {
 		log.Printf("[ProjectHandler] CreateProject Error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -224,7 +224,7 @@ func (h *ProjectHandler) Update(c *gin.Context) {
 		return
 	}
 
-	if err := h.svc.UpdateProject(uint(id), req); err != nil {
+	if err := h.svc.UpdateProject(c.Request.Context(), uint(id), req); err != nil {
 		log.Printf("[ProjectHandler] UpdateProject Error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -240,7 +240,7 @@ func (h *ProjectHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	if err := h.svc.DeleteProject(uint(id)); err != nil {
+	if err := h.svc.DeleteProject(c.Request.Context(), uint(id)); err != nil {
 		log.Printf("[ProjectHandler] DeleteProject Error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "delete error"})
 		return
@@ -255,7 +255,7 @@ func (h *ProjectHandler) Reorder(c *gin.Context) {
 		return
 	}
 
-	if err := h.svc.ReorderProjects(req); err != nil {
+	if err := h.svc.ReorderProjects(c.Request.Context(), req); err != nil {
 		log.Printf("[ProjectHandler] ReorderProjects Error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

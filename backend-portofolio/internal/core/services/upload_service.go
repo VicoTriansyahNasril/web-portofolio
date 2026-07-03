@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"backend-portofolio/internal/core/ports"
 	"time"
 
@@ -17,7 +18,7 @@ func NewUploadService(url string) ports.UploadService {
 	return &uploadService{cloudinaryURL: url}
 }
 
-func (s *uploadService) GenerateSignature() (map[string]interface{}, error) {
+func (s *uploadService) GenerateSignature(ctx context.Context) (map[string]interface{}, error) {
 	cld, err := cloudinary.NewFromURL(s.cloudinaryURL)
 	if err != nil {
 		return nil, err

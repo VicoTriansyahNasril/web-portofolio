@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"backend-portofolio/internal/core/ports"
 	"errors"
 	"time"
@@ -22,7 +23,7 @@ func NewAuthService(secret, email, pass string) ports.AuthService {
 	}
 }
 
-func (s *authService) Login(email, password string) (string, error) {
+func (s *authService) Login(ctx context.Context, email, password string) (string, error) {
 	if email != s.adminEmail || password != s.adminPass {
 		return "", errors.New("invalid credentials")
 	}

@@ -19,7 +19,7 @@ func NewSkillHandler(svc ports.SkillService) *SkillHandler {
 }
 
 func (h *SkillHandler) ListPublic(c *gin.Context) {
-	items, err := h.svc.GetPublicSkills()
+	items, err := h.svc.GetPublicSkills(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
@@ -28,7 +28,7 @@ func (h *SkillHandler) ListPublic(c *gin.Context) {
 }
 
 func (h *SkillHandler) ListAdmin(c *gin.Context) {
-	items, err := h.svc.GetAdminSkills()
+	items, err := h.svc.GetAdminSkills(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
@@ -48,7 +48,7 @@ func (h *SkillHandler) Create(c *gin.Context) {
 		Name:  req.Name,
 	}
 
-	if err := h.svc.CreateSkill(skill); err != nil {
+	if err := h.svc.CreateSkill(c.Request.Context(), skill); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -73,7 +73,7 @@ func (h *SkillHandler) Update(c *gin.Context) {
 		Name:  req.Name,
 	}
 
-	if err := h.svc.UpdateSkill(uint(id), skill); err != nil {
+	if err := h.svc.UpdateSkill(c.Request.Context(), uint(id), skill); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -87,7 +87,7 @@ func (h *SkillHandler) Delete(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
 		return
 	}
-	if err := h.svc.DeleteSkill(uint(id)); err != nil {
+	if err := h.svc.DeleteSkill(c.Request.Context(), uint(id)); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -115,7 +115,7 @@ func (h *SkillHandler) Reorder(c *gin.Context) {
 		})
 	}
 
-	if err := h.svc.ReorderSkills(serviceOrders); err != nil {
+	if err := h.svc.ReorderSkills(c.Request.Context(), serviceOrders); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

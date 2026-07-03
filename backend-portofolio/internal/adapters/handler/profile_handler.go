@@ -18,7 +18,7 @@ func NewProfileHandler(svc ports.ProfileService) *ProfileHandler {
 }
 
 func (h *ProfileHandler) GetPublic(c *gin.Context) {
-	p, err := h.svc.GetPublicProfile()
+	p, err := h.svc.GetPublicProfile(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
@@ -53,7 +53,7 @@ func (h *ProfileHandler) Upsert(c *gin.Context) {
 		})
 	}
 
-	if err := h.svc.UpdateProfile(profile, socials); err != nil {
+	if err := h.svc.UpdateProfile(c.Request.Context(), profile, socials); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

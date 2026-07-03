@@ -23,11 +23,18 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	token, err := h.svc.Login(req.Email, req.Password)
+	token, err := h.svc.Login(c.Request.Context(), req.Email, req.Password)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"access_token": token})
+	c.SetCookie("admin-token", token, 3600*24, "/", "", false, true) // Secure=false for local dev, should be true for production. HttpOnly=true
+
+	c.JSON(http.StatusOK, gin.H{"message": "success"})
+}
+
+func (h *AuthHandler) Logout(c *gin.Context) {
+	c.SetCookie("admin-token", "", -1, "/", "", false, true)
+	c.JSON(http.StatusOK, gin.H{"message": "logged out"})
 }

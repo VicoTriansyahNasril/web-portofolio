@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"backend-portofolio/internal/cache"
 	"backend-portofolio/internal/core/domain"
 	"backend-portofolio/internal/core/ports"
@@ -25,7 +26,7 @@ func (s *achievementService) invalidateCache() {
 	hub.BroadcastEvent("change", "/api/achievements")
 }
 
-func (s *achievementService) GetPublicAchievements() ([]domain.Achievement, error) {
+func (s *achievementService) GetPublicAchievements(ctx context.Context) ([]domain.Achievement, error) {
 	const cacheKey = "public_achievements"
 	cached, err := cache.Get(cacheKey)
 	if err == nil {
@@ -35,7 +36,7 @@ func (s *achievementService) GetPublicAchievements() ([]domain.Achievement, erro
 		}
 	}
 
-	items, err := s.repo.ListPublic()
+	items, err := s.repo.ListPublic(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -45,11 +46,11 @@ func (s *achievementService) GetPublicAchievements() ([]domain.Achievement, erro
 	return items, nil
 }
 
-func (s *achievementService) GetAdminAchievements() ([]domain.Achievement, error) {
-	return s.repo.ListAdmin()
+func (s *achievementService) GetAdminAchievements(ctx context.Context) ([]domain.Achievement, error) {
+	return s.repo.ListAdmin(ctx)
 }
 
-func (s *achievementService) CreateAchievement(req dto.AchievementReq) error {
+func (s *achievementService) CreateAchievement(ctx context.Context, req dto.AchievementReq) error {
 	date, err := time.Parse(time.RFC3339, req.Date)
 	if err != nil {
 		date, err = time.Parse("2006-01-02", req.Date)
@@ -59,7 +60,7 @@ func (s *achievementService) CreateAchievement(req dto.AchievementReq) error {
 		}
 	}
 
-	maxOrder, err := s.repo.GetMaxSortOrder()
+	maxOrder, err := s.repo.GetMaxSortOrder(ctx)
 	if err != nil {
 		log.Printf("Warning: GetMaxSortOrder failed: %v", err)
 		maxOrder = 0
@@ -78,7 +79,7 @@ func (s *achievementService) CreateAchievement(req dto.AchievementReq) error {
 		UpdatedAt:     time.Now(),
 	}
 
-	if err := s.repo.Create(&achievement); err != nil {
+	if err := s.repo.Create(ctx, &achievement); err != nil {
 		log.Printf("DB Create Error: %v", err)
 		return err
 	}
@@ -86,7 +87,7 @@ func (s *achievementService) CreateAchievement(req dto.AchievementReq) error {
 	return nil
 }
 
-func (s *achievementService) UpdateAchievement(id uint, req dto.AchievementReq) error {
+func (s *achievementService) UpdateAchievement(ctx context.Context, id uint, req dto.AchievementReq) error {
 	date, err := time.Parse(time.RFC3339, req.Date)
 	if err != nil {
 		date, err = time.Parse("2006-01-02", req.Date)
@@ -106,26 +107,26 @@ func (s *achievementService) UpdateAchievement(id uint, req dto.AchievementReq) 
 		UpdatedAt:     time.Now(),
 	}
 
-	if err := s.repo.Update(&achievement); err != nil {
+	if err := s.repo.Update(ctx, &achievement); err != nil {
 		return err
 	}
 	s.invalidateCache()
 	return nil
 }
 
-func (s *achievementService) DeleteAchievement(id uint) error {
-	if err := s.repo.Delete(id); err != nil {
+func (s *achievementService) DeleteAchievement(ctx context.Context, id uint) error {
+	if err := s.repo.Delete(ctx, id); err != nil {
 		return err
 	}
 	s.invalidateCache()
 	return nil
 }
 
-func (s *achievementService) ReorderAchievements(orders []struct {
+func (s *achievementService) ReorderAchievements(ctx context.Context, orders []struct {
 	ID        uint `json:"id"`
 	SortOrder int  `json:"sort_order"`
 }) error {
-	if err := s.repo.Reorder(orders); err != nil {
+	if err := s.repo.Reorder(ctx, orders); err != nil {
 		return err
 	}
 	s.invalidateCache()

@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"backend-portofolio/internal/core/domain"
 	"backend-portofolio/internal/core/ports"
 	"time"
@@ -16,35 +17,35 @@ func NewSkillRepo(db *gorm.DB) ports.SkillRepository {
 	return &skillRepo{db: db}
 }
 
-func (r *skillRepo) ListPublic() ([]domain.Skill, error) {
+func (r *skillRepo) ListPublic(ctx context.Context) ([]domain.Skill, error) {
 	var skills []domain.Skill
-	err := r.db.Order("sort_order asc, name asc").Find(&skills).Error
+	err := r.db.WithContext(ctx).Order("sort_order asc, name asc").Find(&skills).Error
 	return skills, err
 }
 
-func (r *skillRepo) ListAdmin() ([]domain.Skill, error) {
+func (r *skillRepo) ListAdmin(ctx context.Context) ([]domain.Skill, error) {
 	var skills []domain.Skill
-	err := r.db.Order("sort_order asc").Find(&skills).Error
+	err := r.db.WithContext(ctx).Order("sort_order asc").Find(&skills).Error
 	return skills, err
 }
 
-func (r *skillRepo) Create(skill *domain.Skill) error {
-	return r.db.Create(skill).Error
+func (r *skillRepo) Create(ctx context.Context, skill *domain.Skill) error {
+	return r.db.WithContext(ctx).Create(skill).Error
 }
 
-func (r *skillRepo) Update(skill *domain.Skill) error {
-	return r.db.Save(skill).Error
+func (r *skillRepo) Update(ctx context.Context, skill *domain.Skill) error {
+	return r.db.WithContext(ctx).Save(skill).Error
 }
 
-func (r *skillRepo) Delete(id uint) error {
-	return r.db.Delete(&domain.Skill{}, id).Error
+func (r *skillRepo) Delete(ctx context.Context, id uint) error {
+	return r.db.WithContext(ctx).Delete(&domain.Skill{}, id).Error
 }
 
-func (r *skillRepo) Reorder(orders []struct {
+func (r *skillRepo) Reorder(ctx context.Context, orders []struct {
 	ID        uint `json:"id"`
 	SortOrder int  `json:"sort_order"`
 }) error {
-	tx := r.db.Begin()
+	tx := r.db.WithContext(ctx).Begin()
 	for _, o := range orders {
 		if err := tx.Model(&domain.Skill{}).Where("id = ?", o.ID).
 			Updates(map[string]interface{}{"sort_order": o.SortOrder, "updated_at": time.Now()}).Error; err != nil {

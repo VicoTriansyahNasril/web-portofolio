@@ -3,6 +3,7 @@ package websocket
 import (
 	"encoding/json"
 	"log"
+	"strconv"
 	"sync"
 
 	"github.com/gorilla/websocket"
@@ -38,14 +39,20 @@ func (h *Hub) run() {
 		case client := <-h.register:
 			h.mu.Lock()
 			h.clients[client] = true
+			count := len(h.clients)
 			h.mu.Unlock()
+			h.broadcastCount(count)
+
 		case client := <-h.unregister:
 			h.mu.Lock()
 			if _, ok := h.clients[client]; ok {
 				delete(h.clients, client)
 				client.Close()
 			}
+			count := len(h.clients)
 			h.mu.Unlock()
+			h.broadcastCount(count)
+
 		case message := <-h.broadcast:
 			h.mu.Lock()
 			for client := range h.clients {
@@ -69,8 +76,9 @@ func (h *Hub) UnregisterClient(client *websocket.Conn) {
 }
 
 type BroadcastMessage struct {
-	Event string `json:"event"`
-	Key   string `json:"key"`
+	Event   string      `json:"event"`
+	Key     string      `json:"key"`
+	Payload interface{} `json:"payload,omitempty"`
 }
 
 func (h *Hub) BroadcastEvent(event, key string) {
@@ -78,6 +86,19 @@ func (h *Hub) BroadcastEvent(event, key string) {
 	jsonMessage, err := json.Marshal(message)
 	if err != nil {
 		log.Printf("Error marshalling broadcast message: %v", err)
+		return
+	}
+	h.broadcast <- jsonMessage
+}
+
+func (h *Hub) broadcastCount(count int) {
+	message := BroadcastMessage{
+		Event:   "visitor_count",
+		Payload: strconv.Itoa(count),
+	}
+	jsonMessage, err := json.Marshal(message)
+	if err != nil {
+		log.Printf("Error marshalling count message: %v", err)
 		return
 	}
 	h.broadcast <- jsonMessage

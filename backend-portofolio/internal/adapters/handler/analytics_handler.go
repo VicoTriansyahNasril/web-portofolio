@@ -24,7 +24,7 @@ func (h *AnalyticsHandler) TrackVisit(c *gin.Context) {
 		return
 	}
 
-	if err := h.svc.TrackVisitor(c.ClientIP(), c.Request.UserAgent(), req.Path); err != nil {
+	if err := h.svc.TrackVisitor(c.Request.Context(), c.ClientIP(), c.Request.UserAgent(), req.Path); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to track"})
 		return
 	}
@@ -32,7 +32,7 @@ func (h *AnalyticsHandler) TrackVisit(c *gin.Context) {
 }
 
 func (h *AnalyticsHandler) GetVisitorsSummary(c *gin.Context) {
-	summary, err := h.svc.GetVisitorsSummary()
+	summary, err := h.svc.GetVisitorsSummary(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
@@ -42,7 +42,7 @@ func (h *AnalyticsHandler) GetVisitorsSummary(c *gin.Context) {
 
 func (h *AnalyticsHandler) GetVisitorDetail(c *gin.Context) {
 	hash := c.Param("visitorHash")
-	detail, err := h.svc.GetVisitorDetail(hash)
+	detail, err := h.svc.GetVisitorDetail(c.Request.Context(), hash)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return

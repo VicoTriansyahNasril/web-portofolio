@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"backend-portofolio/internal/core/domain"
 	"backend-portofolio/internal/core/ports"
 
@@ -15,21 +16,21 @@ func NewProfileRepo(db *gorm.DB) ports.ProfileRepository {
 	return &profileRepo{db: db}
 }
 
-func (r *profileRepo) Get() (*domain.Profile, error) {
+func (r *profileRepo) Get(ctx context.Context) (*domain.Profile, error) {
 	var p domain.Profile
-	err := r.db.Preload("Socials").First(&p).Error
+	err := r.db.WithContext(ctx).Preload("Socials").First(&p).Error
 	if err != nil {
 		return nil, err
 	}
 	return &p, nil
 }
 
-func (r *profileRepo) Upsert(profile *domain.Profile) error {
-	return r.db.Save(profile).Error
+func (r *profileRepo) Upsert(ctx context.Context, profile *domain.Profile) error {
+	return r.db.WithContext(ctx).Save(profile).Error
 }
 
-func (r *profileRepo) UpdateSocialLinks(profileID uint, links []domain.SocialLink) error {
-	tx := r.db.Begin()
+func (r *profileRepo) UpdateSocialLinks(ctx context.Context, profileID uint, links []domain.SocialLink) error {
+	tx := r.db.WithContext(ctx).Begin()
 	if err := tx.Where("profile_id = ?", profileID).Delete(&domain.SocialLink{}).Error; err != nil {
 		tx.Rollback()
 		return err
