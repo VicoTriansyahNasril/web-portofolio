@@ -103,3 +103,10 @@ type ProfileReq struct {
 type TrackVisitReq struct {
 	Path string `json:"path" binding:"required"`
 }
+
+// --- Contact ---
+type ContactReq struct {
+	Name    string `json:"name" binding:"required"`
+	Email   string `json:"email" binding:"required,email"`
+	Message string `json:"message" binding:"required"`
+}

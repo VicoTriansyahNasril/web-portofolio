@@ -20,10 +20,10 @@ export default function AuthProvider({ children }: AuthProviderProps) {
 
     const login = useCallback(async (credentials: LoginCredentials) => {
         const data = await authAPI.login(credentials)
-        if (data.access_token) {
-            setToken(data.access_token)
+        if (data.message === 'success') {
+            setToken('active')
         } else {
-            throw new Error('No access token received')
+            throw new Error('Login failed')
         }
     }, [])
 

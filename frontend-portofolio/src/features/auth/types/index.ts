@@ -4,7 +4,7 @@ export interface LoginCredentials {
 }
 
 export interface LoginResponse {
-    access_token: string
+    message: string
 }
 
 export interface AuthContextType {

@@ -1,9 +1,9 @@
-import { Box, Typography, Chip, Stack, Paper, useTheme, useMediaQuery } from '@mui/material'
 import { motion } from 'framer-motion'
 import WorkIcon from '@mui/icons-material/Work'
 import SchoolIcon from '@mui/icons-material/School'
 import GroupsIcon from '@mui/icons-material/Groups'
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday'
+import LocationOnIcon from '@mui/icons-material/LocationOn'
 import type { Experience } from '../types'
 
 interface ExperienceTimelineProps {
@@ -11,24 +11,29 @@ interface ExperienceTimelineProps {
 }
 
 const getTypeIcon = (type: string) => {
-    if (type === 'Pekerjaan Penuh Waktu' || type === 'Magang') return <WorkIcon fontSize="small" />
-    if (type === 'Organisasi') return <GroupsIcon fontSize="small" />
-    if (type === 'Pendidikan') return <SchoolIcon fontSize="small" />
-    return <WorkIcon fontSize="small" />
+    if (type === 'Pekerjaan Penuh Waktu' || type === 'Magang') return <WorkIcon sx={{ fontSize: '1rem' }} />
+    if (type === 'Organisasi') return <GroupsIcon sx={{ fontSize: '1rem' }} />
+    if (type === 'Pendidikan') return <SchoolIcon sx={{ fontSize: '1rem' }} />
+    return <WorkIcon sx={{ fontSize: '1rem' }} />
 }
 
-const getTypeColor = (type: string): 'primary' | 'secondary' | 'success' | 'info' => {
-    if (type === 'Pekerjaan Penuh Waktu') return 'primary'
-    if (type === 'Magang') return 'info'
-    if (type === 'Organisasi') return 'secondary'
-    if (type === 'Pendidikan') return 'success'
-    return 'primary'
+const getTypeColorClass = (type: string) => {
+    if (type === 'Pekerjaan Penuh Waktu') return 'bg-primary-500 text-white'
+    if (type === 'Magang') return 'bg-blue-500 text-white'
+    if (type === 'Organisasi') return 'bg-purple-500 text-white'
+    if (type === 'Pendidikan') return 'bg-emerald-500 text-white'
+    return 'bg-primary-500 text-white'
+}
+
+const getDotColorClass = (type: string) => {
+    if (type === 'Pekerjaan Penuh Waktu') return 'bg-primary-500 shadow-[0_0_0_4px_rgba(6,182,212,0.2)]'
+    if (type === 'Magang') return 'bg-blue-500 shadow-[0_0_0_4px_rgba(59,130,246,0.2)]'
+    if (type === 'Organisasi') return 'bg-purple-500 shadow-[0_0_0_4px_rgba(168,85,247,0.2)]'
+    if (type === 'Pendidikan') return 'bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.2)]'
+    return 'bg-primary-500 shadow-[0_0_0_4px_rgba(6,182,212,0.2)]'
 }
 
 export default function ExperienceTimeline({ experiences }: ExperienceTimelineProps) {
-    const theme = useTheme()
-    const isMobile = useMediaQuery(theme.breakpoints.down('md'))
-
     const formatDate = (date: string | null): string => {
         if (!date) return 'Present'
         return new Date(date).toLocaleDateString('id-ID', { year: 'numeric', month: 'short' })
@@ -42,182 +47,87 @@ export default function ExperienceTimeline({ experiences }: ExperienceTimelinePr
 
     if (experiences.length === 0) {
         return (
-            <Box sx={{ textAlign: 'center', py: 6 }}>
-                <Typography color="text.secondary">Belum ada data pengalaman</Typography>
-            </Box>
+            <div className="text-center py-12">
+                <p className="text-gray-500 text-lg">Belum ada data pengalaman</p>
+            </div>
         )
     }
 
     return (
-        <Box sx={{ position: 'relative', py: 4, overflow: 'hidden' }}>
-            {!isMobile && (
-                <Box
-                    sx={{
-                        position: 'absolute',
-                        left: '50%',
-                        top: 0,
-                        bottom: 0,
-                        width: '2px',
-                        bgcolor: 'divider',
-                        transform: 'translateX(-50%)',
-                        zIndex: 0
-                    }}
-                />
-            )}
+        <div className="relative py-8 overflow-hidden">
+            {/* Desktop Center Line */}
+            <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-[2px] bg-white/10 -translate-x-1/2 z-0" />
+            
+            {/* Mobile Left Line */}
+            <div className="md:hidden absolute left-4 top-8 bottom-8 w-[2px] bg-white/10 z-0" />
 
-            <Stack spacing={isMobile ? 6 : 0}>
+            <div className="flex flex-col space-y-12 md:space-y-0">
                 {sortedExperiences.map((exp, index) => {
                     const isEven = index % 2 === 0
+                    
                     return (
-                        <Box
+                        <div
                             key={exp.id}
-                            sx={{
-                                display: 'flex',
-                                justifyContent: isMobile ? 'flex-start' : (isEven ? 'flex-end' : 'flex-start'),
-                                position: 'relative',
-                                mb: isMobile ? 0 : 4,
-                                width: '100%'
-                            }}
+                            className={`flex relative w-full md:mb-16 ${
+                                isEven ? 'md:justify-end' : 'md:justify-start'
+                            } justify-start pl-12 md:pl-0`}
                         >
-                            {!isMobile && (
-                                <Box
-                                    sx={{
-                                        position: 'absolute',
-                                        left: '50%',
-                                        top: 24,
-                                        transform: 'translate(-50%, -50%)',
-                                        zIndex: 2,
-                                        bgcolor: 'background.default',
-                                        p: 0.5,
-                                        borderRadius: '50%',
-                                        border: '2px solid',
-                                        borderColor: 'divider'
-                                    }}
-                                >
-                                    <Box
-                                        sx={{
-                                            width: 16,
-                                            height: 16,
-                                            borderRadius: '50%',
-                                            bgcolor: `${getTypeColor(exp.type)}.main`,
-                                            boxShadow: (t) => `0 0 0 4px ${t.palette[getTypeColor(exp.type)].main}30`
-                                        }}
-                                    />
-                                </Box>
-                            )}
+                            {/* Dot Timeline */}
+                            <div className="absolute left-4 md:left-1/2 top-8 md:top-1/2 -translate-x-[9px] md:-translate-x-1/2 md:-translate-y-1/2 z-10 bg-[#050505] p-1 rounded-full border-2 border-white/10">
+                                <div className={`w-4 h-4 rounded-full ${getDotColorClass(exp.type)}`} />
+                            </div>
 
                             <motion.div
-                                initial={{ opacity: 0, x: isMobile ? -50 : (isEven ? -50 : 50) }}
+                                initial={{ opacity: 0, x: isEven ? 50 : -50 }}
                                 whileInView={{ opacity: 1, x: 0 }}
                                 viewport={{ once: true, margin: "-50px" }}
                                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                                style={{
-                                    width: isMobile ? '100%' : '50%',
-                                    paddingLeft: isMobile ? 0 : (isEven ? 0 : 40),
-                                    paddingRight: isMobile ? 0 : (isEven ? 40 : 0),
-                                    position: 'relative'
-                                }}
+                                className={`w-full md:w-1/2 ${
+                                    isEven ? 'md:pl-12 lg:pl-16' : 'md:pr-12 lg:pr-16'
+                                } relative`}
                             >
-                                {isMobile && (
-                                    <Box
-                                        sx={{
-                                            position: 'absolute',
-                                            left: -20,
-                                            top: 24,
-                                            bottom: -40,
-                                            width: '2px',
-                                            bgcolor: 'divider',
-                                            zIndex: 0
-                                        }}
-                                    />
-                                )}
+                                <div className="glass-heavy p-6 md:p-8 rounded-3xl border border-white/5 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:border-primary-500/50 group">
+                                    <div className="flex flex-col gap-4">
+                                        <div>
+                                            <h3 className="text-xl md:text-2xl font-bold text-white mb-1 leading-tight group-hover:text-primary-400 transition-colors">
+                                                {exp.title}
+                                            </h3>
+                                            <h4 className="text-primary-500 font-semibold text-lg">
+                                                {exp.entity_name}
+                                            </h4>
+                                        </div>
 
-                                {isMobile && (
-                                    <Box
-                                        sx={{
-                                            position: 'absolute',
-                                            left: -27,
-                                            top: 24,
-                                            width: 16,
-                                            height: 16,
-                                            borderRadius: '50%',
-                                            bgcolor: `${getTypeColor(exp.type)}.main`,
-                                            zIndex: 1,
-                                            boxShadow: (t) => `0 0 0 4px ${t.palette[getTypeColor(exp.type)].main}30`
-                                        }}
-                                    />
-                                )}
-
-                                <Paper
-                                    elevation={0}
-                                    sx={{
-                                        p: 3,
-                                        borderRadius: 4,
-                                        border: '1px solid',
-                                        borderColor: 'divider',
-                                        background: (t) => t.palette.mode === 'dark'
-                                            ? 'linear-gradient(135deg, rgba(30,41,59,0.7) 0%, rgba(15,23,42,0.7) 100%)'
-                                            : 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(241,245,249,0.9) 100%)',
-                                        backdropFilter: 'blur(10px)',
-                                        transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-                                        '&:hover': {
-                                            transform: 'translateY(-4px)',
-                                            boxShadow: (t) => t.palette.mode === 'dark' ? '0 10px 30px -10px rgba(0,0,0,0.5)' : '0 10px 30px -10px rgba(0,0,0,0.1)',
-                                            borderColor: `${getTypeColor(exp.type)}.main`
-                                        }
-                                    }}
-                                >
-                                    <Stack spacing={2}>
-                                        <Box>
-                                            <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
-                                                <Box>
-                                                    <Typography variant="h6" fontWeight={800} lineHeight={1.2} mb={0.5}>
-                                                        {exp.title}
-                                                    </Typography>
-                                                    <Typography variant="subtitle1" color="primary.main" fontWeight={600}>
-                                                        {exp.entity_name}
-                                                    </Typography>
-                                                </Box>
-                                            </Stack>
-                                        </Box>
-
-                                        <Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
-                                            <Chip
-                                                icon={<CalendarTodayIcon sx={{ fontSize: '0.9rem !important' }} />}
-                                                label={`${formatDate(exp.start_date)} - ${formatDate(exp.end_date)}`}
-                                                size="small"
-                                                variant="outlined"
-                                                sx={{ borderRadius: 2, borderColor: 'divider' }}
-                                            />
-                                            <Chip
-                                                icon={getTypeIcon(exp.type)}
-                                                label={exp.type}
-                                                color={getTypeColor(exp.type)}
-                                                size="small"
-                                                sx={{ borderRadius: 2, fontWeight: 600 }}
-                                            />
+                                        <div className="flex flex-wrap gap-2">
+                                            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-white/10 bg-white/5 text-gray-300 text-sm">
+                                                <CalendarTodayIcon sx={{ fontSize: '1rem' }} />
+                                                <span>{`${formatDate(exp.start_date)} - ${formatDate(exp.end_date)}`}</span>
+                                            </div>
+                                            
+                                            <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full font-medium text-sm ${getTypeColorClass(exp.type)}`}>
+                                                {getTypeIcon(exp.type)}
+                                                <span>{exp.type}</span>
+                                            </div>
+                                            
                                             {exp.location && (
-                                                <Chip
-                                                    label={exp.location}
-                                                    size="small"
-                                                    variant="outlined"
-                                                    sx={{ borderRadius: 2, borderColor: 'divider' }}
-                                                />
+                                                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-white/10 bg-white/5 text-gray-300 text-sm">
+                                                    <LocationOnIcon sx={{ fontSize: '1rem' }} />
+                                                    <span>{exp.location}</span>
+                                                </div>
                                             )}
-                                        </Stack>
+                                        </div>
 
                                         {exp.description && (
-                                            <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+                                            <p className="text-gray-400 text-sm md:text-base leading-relaxed whitespace-pre-wrap mt-2">
                                                 {exp.description}
-                                            </Typography>
+                                            </p>
                                         )}
-                                    </Stack>
-                                </Paper>
+                                    </div>
+                                </div>
                             </motion.div>
-                        </Box>
+                        </div>
                     )
                 })}
-            </Stack>
-        </Box>
+            </div>
+        </div>
     )
 }

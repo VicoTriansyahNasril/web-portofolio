@@ -16,6 +16,11 @@ type Config struct {
 	CORSOrigins   string
 	CloudinaryURL string
 	RedisURL      string
+	SMTPHost      string
+	SMTPPort      string
+	SMTPUser      string
+	SMTPPass      string
+	ContactEmail  string
 }
 
 func getenv(k, def string) string {
@@ -40,5 +45,10 @@ func Load() Config {
 		CORSOrigins:   getenv("CORS_ORIGINS", "http://localhost:5173"),
 		CloudinaryURL: getenv("CLOUDINARY_URL", ""),
 		RedisURL:      getenv("REDIS_URL", "redis://redis:6379/0"),
+		SMTPHost:      getenv("SMTP_HOST", "smtp.gmail.com"),
+		SMTPPort:      getenv("SMTP_PORT", "587"),
+		SMTPUser:      getenv("SMTP_USER", ""),
+		SMTPPass:      getenv("SMTP_PASS", ""),
+		ContactEmail:  getenv("CONTACT_EMAIL", getenv("ADMIN_EMAIL", "")),
 	}
 }

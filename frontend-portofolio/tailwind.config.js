@@ -9,21 +9,11 @@ export default {
   theme: {
     extend: {
       colors: {
+        background: '#050505',
+        surface: '#0f0f13',
+        surfaceHighlight: '#1a1a24',
         primary: {
-          DEFAULT: '#7C3AED',
-          50: '#F5F3FF',
-          100: '#EDE9FE',
-          200: '#DDD6FE',
-          300: '#C4B5FD',
-          400: '#A78BFA',
-          500: '#8B5CF6',
-          600: '#7C3AED',
-          700: '#6D28D9',
-          800: '#5B21B6',
-          900: '#4C1D95',
-        },
-        secondary: {
-          DEFAULT: '#06B6D4',
+          DEFAULT: '#06B6D4', // Cyan accent
           50: '#ECFEFF',
           100: '#CFFAFE',
           200: '#A5F3FC',
@@ -35,13 +25,28 @@ export default {
           800: '#155E75',
           900: '#164E63',
         },
+        secondary: {
+          DEFAULT: '#7C3AED', // Purple accent
+          50: '#F5F3FF',
+          100: '#EDE9FE',
+          200: '#DDD6FE',
+          300: '#C4B5FD',
+          400: '#A78BFA',
+          500: '#8B5CF6',
+          600: '#7C3AED',
+          700: '#6D28D9',
+          800: '#5B21B6',
+          900: '#4C1D95',
+        },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'Segoe UI', 'Roboto', 'Arial', 'sans-serif'],
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        display: ['Syne', 'Inter', 'system-ui', 'sans-serif'],
       },
       borderRadius: {
         'xl': '1rem',
         '2xl': '1.5rem',
+        '3xl': '2rem',
       },
       backdropBlur: {
         xs: '2px',

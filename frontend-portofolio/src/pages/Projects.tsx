@@ -1,4 +1,4 @@
-import { Typography, Box, CircularProgress } from '@mui/material'
+import { Box, CircularProgress } from '@mui/material'
 import { motion, AnimatePresence, Variants } from 'framer-motion'
 import ProjectCard from '@/features/projects/components/ProjectCard'
 import { Project } from '@/features/projects/types'
@@ -41,35 +41,19 @@ export default function Projects() {
     const safeProjects = Array.isArray(projects) ? projects : []
 
     return (
-        <Box>
+        <div>
             <motion.div
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
+                className="text-center mb-12"
             >
-                <Typography
-                    variant="h3"
-                    fontWeight={800}
-                    gutterBottom
-                    textAlign="center"
-                    sx={{
-                        background: 'linear-gradient(135deg, #7C3AED 0%, #06B6D4 100%)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text',
-                        mb: 1
-                    }}
-                >
+                <h2 className="heading-display text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary-400 to-secondary-500 bg-clip-text text-transparent">
                     Projects
-                </Typography>
-                <Typography
-                    variant="body1"
-                    color="text.secondary"
-                    textAlign="center"
-                    sx={{ mb: 6, maxWidth: 600, mx: 'auto' }}
-                >
-                    Berikut adalah koleksi proyek yang telah saya kerjakan
-                </Typography>
+                </h2>
+                <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+                    Berikut adalah koleksi proyek yang telah saya kerjakan.
+                </p>
             </motion.div>
 
             <motion.div
@@ -78,17 +62,7 @@ export default function Projects() {
                 animate="visible"
             >
                 <AnimatePresence mode="wait">
-                    <Box
-                        sx={{
-                            display: 'grid',
-                            gridTemplateColumns: {
-                                xs: '1fr',
-                                sm: 'repeat(2, 1fr)',
-                                md: 'repeat(3, 1fr)'
-                            },
-                            gap: 3
-                        }}
-                    >
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                         {safeProjects.map((project, index) => (
                             <motion.div
                                 key={project.id}
@@ -99,7 +73,7 @@ export default function Projects() {
                                 <ProjectCard project={project} />
                             </motion.div>
                         ))}
-                    </Box>
+                    </div>
                 </AnimatePresence>
             </motion.div>
 
@@ -109,13 +83,13 @@ export default function Projects() {
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.5 }}
                 >
-                    <Box sx={{ textAlign: 'center', py: 8 }}>
-                        <Typography variant="h6" color="text.secondary">
+                    <div className="text-center py-16">
+                        <p className="text-gray-500 text-lg">
                             Belum ada proyek yang ditambahkan.
-                        </Typography>
-                    </Box>
+                        </p>
+                    </div>
                 </motion.div>
             )}
-        </Box>
+        </div>
     )
 }

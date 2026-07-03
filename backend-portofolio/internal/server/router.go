@@ -87,6 +87,9 @@ func SetupRouter(cfg *config.Config, dbConn *gorm.DB) *gin.Engine {
 	uploadSvc := services.NewUploadService(cfg.CloudinaryURL)
 	uploadHdl := handler.NewUploadHandler(uploadSvc)
 
+	contactSvc := services.NewContactService(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPass, cfg.ContactEmail)
+	contactHdl := handler.NewContactHandler(contactSvc)
+
 	publicAPI := r.Group("/api")
 	publicAPI.Use(middleware.CacheControl(5 * time.Minute))
 	{
@@ -96,9 +99,11 @@ func SetupRouter(cfg *config.Config, dbConn *gorm.DB) *gin.Engine {
 		publicAPI.GET("/skills", skillHdl.ListPublic)
 		publicAPI.GET("/experiences", experienceHdl.ListPublic)
 		publicAPI.GET("/achievements", achievementHdl.ListPublic)
+		publicAPI.GET("/analytics/stats", analyticsHdl.GetPublicStats)
 	}
 
 	r.POST("/api/track", analyticsHdl.TrackVisit)
+	r.POST("/api/contact", contactHdl.SendMessage)
 	r.POST("/api/auth/login", middleware.LoginLimit, authHdl.Login)
 	r.POST("/api/auth/logout", authHdl.Logout)
 

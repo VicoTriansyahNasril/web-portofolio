@@ -20,6 +20,7 @@ import AuthProvider from './features/auth/context/AuthProvider'
 import PrivateRoute from './features/auth/components/PrivateRoute'
 import LoginPage from './features/auth/routes/LoginPage'
 
+const CustomCursor = lazy(() => import('./components/ui/CustomCursor'))
 const Home = lazy(() => import('./pages/Home'))
 const ProjectDetail = lazy(() => import('./pages/ProjectDetail'))
 const NotFound = lazy(() => import('./pages/NotFound'))
@@ -97,6 +98,7 @@ function App() {
   useEffect(() => {
     localStorage.setItem('theme', mode)
     document.body.setAttribute('data-color-mode', mode)
+    document.body.classList.add('bg-noise')
     if (isAdminPage) document.body.classList.add('admin-background')
     else document.body.classList.remove('admin-background')
   }, [mode, isAdminPage])
@@ -124,6 +126,8 @@ function App() {
                 <Suspense fallback={null}><InteractiveBackground /></Suspense>
               </>
             )}
+
+            {!isAdminPage && <Suspense fallback={null}><CustomCursor /></Suspense>}
 
             <AnimatePresence mode="wait">
               <Suspense fallback={<LoadingScreen />}>

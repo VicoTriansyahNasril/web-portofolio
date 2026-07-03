@@ -1,5 +1,5 @@
 import { useEffect, useMemo, Suspense, lazy, useRef } from 'react'
-import { Box, Stack, Typography, Paper, CircularProgress, Chip, IconButton, Button, Container } from '@mui/material'
+import { Box, CircularProgress, Container } from '@mui/material'
 import { useLocation } from 'react-router-dom'
 import { motion, Variants } from 'framer-motion'
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
@@ -11,10 +11,12 @@ import type { Skill } from '@/features/skills/types'
 import LazySection from '@/components/utils/LazySection'
 import Interactive3D from '@/components/ui/Interactive3D'
 import SectionBackground from '@/components/ui/SectionBackground'
+import SEO from '@/components/ui/SEO'
 import { useScrollSectionTracker } from '@/hooks/useScrollSectionTracker'
 
 const ProjectsSection = lazy(() => import('./Projects'))
 const AboutSection = lazy(() => import('./About'))
+const ContactSection = lazy(() => import('./Contact'))
 
 const itemVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
@@ -96,15 +98,15 @@ export default function Home() {
 
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+            <SEO title="Portfolio" />
             <Box
                 component="section"
                 id="home"
                 ref={homeRef}
                 sx={{
-                    height: '100vh',
+                    minHeight: '100vh',
                     width: '100%',
                     position: 'relative',
-                    overflow: 'hidden',
                     display: 'flex',
                     alignItems: 'center',
                     bgcolor: 'transparent',
@@ -128,77 +130,82 @@ export default function Home() {
                         pointerEvents: 'none'
                     }}
                 >
-                    <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', py: 4 }}>
-                        <Box sx={{ pointerEvents: 'auto', mt: 8 }}>
+                    <div className="flex flex-col justify-center lg:justify-between h-full pt-28 pb-16">
+                        <div className="pointer-events-auto mt-8 lg:mt-20">
                             <motion.div variants={itemVariants} initial="hidden" animate="visible">
-                                <Box sx={{ maxWidth: 600, textAlign: { xs: 'center', md: 'left' } }}>
+                                <div className="max-w-2xl text-center md:text-left">
                                     <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.2 }}>
-                                        <Typography variant="h5" color="primary.main" fontWeight={600}>Hi, my name is</Typography>
+                                        <p className="text-primary-400 font-semibold tracking-wide uppercase text-sm mb-2">Hi, my name is</p>
                                     </motion.div>
 
                                     <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.7, delay: 0.4, type: 'spring', stiffness: 100 }}>
-                                        <Typography variant="h2" fontWeight={800} sx={{ my: 1, background: 'linear-gradient(135deg, #7C3AED 0%, #06B6D4 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+                                        <h1 className="heading-display text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-primary-400 to-secondary-500 bg-clip-text text-transparent">
                                             {profile?.full_name}.
-                                        </Typography>
+                                        </h1>
                                     </motion.div>
 
                                     <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.6 }}>
-                                        <Typography variant="h4" fontWeight={700} color="text.secondary">{profile?.headline}</Typography>
+                                        <h2 className="heading-display text-2xl md:text-4xl font-bold text-gray-300 mb-6">{profile?.headline}</h2>
                                     </motion.div>
 
                                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.8 }}>
-                                        <Typography color="text.secondary" sx={{ mt: 2, mb: 3, whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+                                        <p className="text-gray-400 text-lg md:text-xl max-w-xl leading-relaxed mb-8 text-balance">
                                             {profile?.bio?.split('\n')[0]}
-                                        </Typography>
+                                        </p>
                                     </motion.div>
 
                                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 1 }}>
-                                        <Stack direction="row" spacing={1} justifyContent={{ xs: 'center', md: 'flex-start' }}>
+                                        <div className="flex flex-row gap-4 justify-center md:justify-start">
                                             {socialLinks.github && (
-                                                <motion.div whileHover={{ scale: 1.1, rotate: 5 }} whileTap={{ scale: 0.95 }}>
-                                                    <IconButton component="a" href={socialLinks.github.url} target="_blank" color="primary"><GitHubIcon /></IconButton>
-                                                </motion.div>
+                                                <motion.a whileHover={{ scale: 1.1, rotate: 5 }} whileTap={{ scale: 0.95 }} href={socialLinks.github.url} target="_blank" className="p-3 glass rounded-full text-white hover:text-primary-400 transition-colors">
+                                                    <GitHubIcon />
+                                                </motion.a>
                                             )}
                                             {socialLinks.linkedin && (
-                                                <motion.div whileHover={{ scale: 1.1, rotate: -5 }} whileTap={{ scale: 0.95 }}>
-                                                    <IconButton component="a" href={socialLinks.linkedin.url} target="_blank" color="primary"><LinkedInIcon /></IconButton>
-                                                </motion.div>
+                                                <motion.a whileHover={{ scale: 1.1, rotate: -5 }} whileTap={{ scale: 0.95 }} href={socialLinks.linkedin.url} target="_blank" className="p-3 glass rounded-full text-white hover:text-secondary-400 transition-colors">
+                                                    <LinkedInIcon />
+                                                </motion.a>
                                             )}
-                                        </Stack>
+                                        </div>
                                     </motion.div>
-                                </Box>
+                                </div>
                             </motion.div>
-                        </Box>
+                        </div>
 
-                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: { xs: 4, md: 0 }, pointerEvents: 'auto', mb: 4 }}>
-                            <Stack spacing={3} sx={{ alignItems: 'flex-end', maxWidth: 500, width: '100%' }}>
-                                <motion.div variants={itemVariants} initial="hidden" animate="visible" style={{ width: '100%' }} whileHover={{ scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }}>
-                                    <Paper sx={{ p: { xs: 2, md: 4 }, background: 'linear-gradient(135deg, rgba(124,58,237,0.05) 0%, rgba(6,182,212,0.05) 100%)', backdropFilter: 'blur(10px)', border: '1px solid', borderColor: 'divider' }}>
-                                        <Typography variant="h5" fontWeight={700} mb={2}>Tech Stack</Typography>
-                                        <motion.div variants={staggerContainer} initial="hidden" animate="visible">
-                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                                                {safeSkills.slice(0, 8).map((skill, index) => (
-                                                    <motion.div key={skill.id} variants={chipVariants} custom={index} whileHover={{ scale: 1.1, y: -2 }} whileTap={{ scale: 0.95 }}>
-                                                        <Chip label={skill.name} variant="outlined" sx={{ transition: 'all 0.3s', '&:hover': { bgcolor: 'primary.main', color: 'primary.contrastText', borderColor: 'primary.main' } }} />
-                                                    </motion.div>
-                                                ))}
-                                            </Box>
+                        {/* Bento Box Elements - Right Side/Bottom */}
+                        <div className="flex justify-end mt-12 lg:mt-0 pointer-events-auto mb-8 hidden md:flex">
+                            <div className="flex flex-col gap-6 max-w-lg w-full">
+                                <motion.div variants={itemVariants} initial="hidden" animate="visible" className="w-full" whileHover={{ scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }}>
+                                    <div className="glass-heavy p-6 md:p-8 rounded-3xl border border-white/5 relative overflow-hidden group">
+                                        <div className="absolute inset-0 bg-gradient-to-br from-primary-500/10 to-secondary-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                        <h3 className="heading-display text-2xl font-bold mb-4 text-white">Tech Stack</h3>
+                                        <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="flex flex-wrap gap-2 relative z-10">
+                                            {safeSkills.slice(0, 8).map((skill, index) => (
+                                                <motion.div key={skill.id} variants={chipVariants} custom={index} whileHover={{ scale: 1.1, y: -2 }} whileTap={{ scale: 0.95 }}>
+                                                    <div className="px-4 py-2 rounded-full border border-primary-500/30 text-sm font-medium text-primary-300 bg-primary-500/10 backdrop-blur-md">
+                                                        {skill.name}
+                                                    </div>
+                                                </motion.div>
+                                            ))}
                                         </motion.div>
-                                    </Paper>
+                                    </div>
                                 </motion.div>
 
-                                <motion.div variants={itemVariants} initial="hidden" animate="visible" transition={{ delay: 0.2 }} style={{ width: '100%' }} whileHover={{ scale: 1.02, y: -5 }}>
-                                    <Paper sx={{ p: { xs: 2, md: 4 }, textAlign: 'center', background: 'linear-gradient(135deg, rgba(6,182,212,0.05) 0%, rgba(124,58,237,0.05) 100%)', border: '1px solid', borderColor: 'divider', position: 'relative', overflow: 'hidden' }}>
-                                        <Typography variant="h5" fontWeight={700}>Explore My Work</Typography>
-                                        <Typography color="text.secondary" my={1}>Check out my latest projects and experiments.</Typography>
-                                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                                            <Button onClick={handleScrollToProjects} variant="contained" sx={{ mt: 2, boxShadow: 3 }} endIcon={<ArrowForwardIcon />}>View Projects</Button>
-                                        </motion.div>
-                                    </Paper>
+
+
+                                <motion.div variants={itemVariants} initial="hidden" animate="visible" transition={{ delay: 0.2 }} className="w-full" whileHover={{ scale: 1.02, y: -5 }}>
+                                    <div className="glass-heavy p-6 md:p-8 rounded-3xl border border-white/5 text-center relative overflow-hidden group">
+                                        <div className="absolute inset-0 bg-gradient-to-tr from-secondary-500/10 to-primary-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                        <h3 className="heading-display text-2xl font-bold text-white mb-2 relative z-10">Explore My Work</h3>
+                                        <p className="text-gray-400 mb-6 relative z-10">Check out my latest projects and experiments.</p>
+                                        <motion.button onClick={handleScrollToProjects} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="px-8 py-3 bg-white text-black font-semibold rounded-full hover:bg-gray-200 transition-colors relative z-10 flex items-center justify-center mx-auto gap-2">
+                                            View Projects <ArrowForwardIcon fontSize="small" />
+                                        </motion.button>
+                                    </div>
                                 </motion.div>
-                            </Stack>
-                        </Box>
-                    </Box>
+                            </div>
+                        </div>
+                    </div>
                 </Container>
             </Box>
 
@@ -213,12 +220,23 @@ export default function Home() {
                 </Container>
             </Box>
 
-            <Box component="section" id="about" sx={{ py: 10, minHeight: '100vh', bgcolor: 'background.default', position: 'relative' }}>
+            <Box component="section" id="about" sx={{ py: 10, minHeight: '100vh', bgcolor: 'transparent', position: 'relative' }}>
                 <SectionBackground />
                 <Container sx={{ position: 'relative', zIndex: 1 }}>
                     <LazySection>
                         <Suspense fallback={null}>
                             <AboutSection />
+                        </Suspense>
+                    </LazySection>
+                </Container>
+            </Box>
+
+            <Box component="section" id="contact-section" sx={{ py: 10, minHeight: '60vh', bgcolor: 'transparent', position: 'relative' }}>
+                <SectionBackground />
+                <Container sx={{ position: 'relative', zIndex: 1 }}>
+                    <LazySection>
+                        <Suspense fallback={null}>
+                            <ContactSection />
                         </Suspense>
                     </LazySection>
                 </Container>

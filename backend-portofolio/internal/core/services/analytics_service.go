@@ -132,3 +132,22 @@ func (s *analyticsService) GetVisitorDetail(ctx context.Context, hash string) (m
 
 	return response, nil
 }
+
+func (s *analyticsService) GetPublicStats(ctx context.Context) (map[string]interface{}, error) {
+	rawSummaries, err := s.repo.GetVisitorSummaries(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	totalUniqueVisitors := len(rawSummaries)
+	var totalPageViews int64 = 0
+
+	for _, raw := range rawSummaries {
+		totalPageViews += raw.TotalPageViews
+	}
+
+	return map[string]interface{}{
+		"total_visitors":   totalUniqueVisitors,
+		"total_page_views": totalPageViews,
+	}, nil
+}

@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -12,6 +13,7 @@ func JWTAuth(secret string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenStr, err := c.Cookie("admin-token")
 		if err != nil || tokenStr == "" {
+			fmt.Printf("JWT Error: missing cookie: %v\n", err)
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "missing or invalid token"})
 			return
 		}

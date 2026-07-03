@@ -53,3 +53,12 @@ func (h *AnalyticsHandler) GetVisitorDetail(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, detail)
 }
+
+func (h *AnalyticsHandler) GetPublicStats(c *gin.Context) {
+	stats, err := h.svc.GetPublicStats(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		return
+	}
+	c.JSON(http.StatusOK, stats)
+}

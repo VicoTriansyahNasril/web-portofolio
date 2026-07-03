@@ -1,4 +1,4 @@
-import { Box, Typography, Paper, CircularProgress } from '@mui/material';
+import { Box, CircularProgress } from '@mui/material';
 import { motion, Variants } from 'framer-motion';
 import ProfileHeader from '@/features/profile/components/ProfileHeader';
 import ExperienceTimeline from '@/features/experiences/components/ExperienceTimeline';
@@ -54,62 +54,53 @@ export default function About() {
             </motion.div>
 
             <motion.div initial="hidden" animate="visible" variants={sectionVariants} transition={{ delay: 0.2 }}>
-                <Paper
-                    elevation={0}
-                    sx={{
-                        p: { xs: 3, md: 4 },
-                        mt: 4,
-                        borderRadius: 4,
-                        background: 'linear-gradient(135deg, rgba(124,58,237,0.03) 0%, rgba(6,182,212,0.03) 100%)',
-                        border: '1px solid',
-                        borderColor: 'divider',
-                    }}
-                >
-                    <Typography variant="h5" fontWeight={800} mb={3} sx={{ borderBottom: '3px solid #7C3AED', display: 'inline-block', pb: 1 }}>
+                <div className="glass-heavy p-6 md:p-10 mt-8 rounded-3xl border border-white/5 relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary-500/5 to-secondary-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                    <h2 className="heading-display text-3xl font-bold mb-6 text-white inline-block border-b-2 border-primary-500 pb-2 relative z-10">
                         About Me
-                    </Typography>
-                    <Typography variant="body1" color="text.secondary" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.8 }}>
+                    </h2>
+                    <p className="text-gray-300 text-lg leading-relaxed whitespace-pre-wrap relative z-10">
                         {profile?.bio}
-                    </Typography>
-                </Paper>
+                    </p>
+                </div>
             </motion.div>
 
             {safeExperiences.length > 0 && (
                 <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }}>
-                    <Box sx={{ mt: 5 }}>
+                    <div className="mt-16">
                         <motion.div variants={sectionVariants}>
-                            <Typography variant="h5" fontWeight={800} mb={4} sx={{ borderBottom: '3px solid #7C3AED', display: 'inline-block', pb: 1 }}>
+                            <h2 className="heading-display text-3xl font-bold mb-8 text-white inline-block border-b-2 border-primary-500 pb-2">
                                 Experience
-                            </Typography>
+                            </h2>
                         </motion.div>
                         <ExperienceTimeline experiences={safeExperiences} />
-                    </Box>
+                    </div>
                 </motion.div>
             )}
 
             {safeSkills.length > 0 && (
                 <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }}>
-                    <Box sx={{ mt: 5 }}>
+                    <div className="mt-16">
                         <motion.div variants={sectionVariants}>
-                            <Typography variant="h5" fontWeight={800} mb={3} sx={{ borderBottom: '3px solid #7C3AED', display: 'inline-block', pb: 1 }}>
+                            <h2 className="heading-display text-3xl font-bold mb-6 text-white inline-block border-b-2 border-primary-500 pb-2">
                                 Skills
-                            </Typography>
+                            </h2>
                         </motion.div>
                         <SkillChips skills={safeSkills} groupOrder={profile?.skill_group_order} />
-                    </Box>
+                    </div>
                 </motion.div>
             )}
 
             {safeAchievements.length > 0 && (
                 <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }}>
-                    <Box sx={{ mt: 5 }}>
+                    <div className="mt-16">
                         <motion.div variants={sectionVariants}>
-                            <Typography variant="h5" fontWeight={800} mb={3} sx={{ borderBottom: '3px solid #7C3AED', display: 'inline-block', pb: 1 }}>
+                            <h2 className="heading-display text-3xl font-bold mb-6 text-white inline-block border-b-2 border-primary-500 pb-2">
                                 Achievements
-                            </Typography>
+                            </h2>
                         </motion.div>
                         <AchievementList achievements={safeAchievements} />
-                    </Box>
+                    </div>
                 </motion.div>
             )}
         </Box>

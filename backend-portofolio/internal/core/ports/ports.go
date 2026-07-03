@@ -118,6 +118,7 @@ type AnalyticsService interface {
 	TrackVisitor(ctx context.Context, ip, userAgent, path string) error
 	GetVisitorsSummary(ctx context.Context) ([]map[string]interface{}, error)
 	GetVisitorDetail(ctx context.Context, hash string) (map[string]interface{}, error)
+	GetPublicStats(ctx context.Context) (map[string]interface{}, error)
 }
 
 type AuthService interface {
@@ -126,4 +127,8 @@ type AuthService interface {
 
 type UploadService interface {
 	GenerateSignature(ctx context.Context) (map[string]interface{}, error)
+}
+
+type ContactService interface {
+	SendMessage(ctx context.Context, name, email, message string) error
 }
