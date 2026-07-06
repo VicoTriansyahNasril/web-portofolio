@@ -1,0 +1,54 @@
+#!/usr/bin/env sh
+
+echo "\033[0;32m"
+cat << "EOF"
+ ______   ______    ______             ______   ______   ___ __ __   ___ __ __    ________  _________
+/_____/\ /_____/\  /_____/\           /_____/\ /_____/\ /__//_//_/\ /__//_//_/\  /_______/\/________/\
+\:::_ \ \\:::_ \ \ \::::_\/_   _______\:::__\/ \:::_ \ \\::\| \| \ \\::\| \| \ \ \__.::._\/\__.::.__\/
+ \:(_) \ \\:(_) ) )_\:\/___/\ /______/\\:\ \  __\:\ \ \ \\:.      \ \\:.      \ \   \::\ \    \::\ \
+  \: ___\/ \: __ `\ \\::___\/_\__::::\/ \:\ \/_/\\:\ \ \ \\:.\-/\  \ \\:.\-/\  \ \  _\::\ \__  \::\ \
+   \ \ \    \ \ `\ \ \\:\____/\          \:\_\ \ \\:\_\ \ \\. \  \  \ \\. \  \  \ \/__\::\__/\  \::\ \
+    \_\/     \_\/ \_\/ \_____\/           \_____\/ \_____\/ \__\/ \__\/ \__\/ \__\/\________\/   \__\/
+EOF
+echo "\033[0m"
+
+echo "\033[0;36m🧹 Menjalankan format kode & linting...\033[0m"
+
+# ==========================================
+# 1. Backend (Go) Formatting
+# ==========================================
+STAGED_GO_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep 'backend-portofolio/.*\.go$' || true)
+if [ -n "$STAGED_GO_FILES" ]; then
+    echo "\033[0;36m📦 Memformat file Go Backend...\033[0m"
+    for file in $STAGED_GO_FILES; do
+        gofmt -w "$file"
+        git add "$file"
+    done
+    echo "\033[0;32m✅ File Go berhasil diformat.\033[0m"
+fi
+
+# ==========================================
+# 2. Frontend (React/TS/JS) Formatting & Linting
+# ==========================================
+if [ -d "frontend-portofolio" ]; then
+    echo "\033[0;36m🎨 Memformat dan menganalisa file Frontend...\033[0m"
+    cd frontend-portofolio
+    
+    # Run lint-staged (this formats and lints only staged files)
+    output=$(npx lint-staged 2>&1)
+    exit_code=$?
+    
+    echo "$output"
+    
+    if [ $exit_code -ne 0 ]; then
+        echo "\033[0;31m❌ Terdeteksi warning/error pada analisa Frontend. Mohon perbaiki sebelum commit.\033[0m"
+        exit 1
+    fi
+    
+    cd ..
+    echo "\033[0;32m✅ Frontend berhasil dianalisa dan diformat.\033[0m"
+fi
+
+echo "\033[0;36m📦 File yang telah diformat ditambahkan ke commit.\033[0m"
+echo "\033[0;32m✅ Semua pengecekan lolos. Commit dilanjutkan.\033[0m"
+exit 0
