@@ -6,6 +6,7 @@ import (
 
 	"backend-portofolio/internal/adapters/handler"
 	"backend-portofolio/internal/adapters/repository"
+	"backend-portofolio/internal/cache"
 	"backend-portofolio/internal/config"
 	"backend-portofolio/internal/core/services"
 	"backend-portofolio/internal/middleware"
@@ -38,8 +39,30 @@ func wsHandler(c *gin.Context) {
 	}
 }
 
-func healthCheck(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"status": "active"})
+func healthCheck(dbConn *gorm.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		dbStatus := "up"
+		sqlDB, err := dbConn.DB()
+		if err != nil || sqlDB.Ping() != nil {
+			dbStatus = "down"
+		}
+
+		redisStatus := "up"
+		if cache.Rdb != nil {
+			if err := cache.Rdb.Set(c.Request.Context(), "ping", "pong", 1*time.Minute).Err(); err != nil {
+				redisStatus = "down"
+			}
+		} else {
+			redisStatus = "down"
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"status":   "active",
+			"database": dbStatus,
+			"redis":    redisStatus,
+			"time":     time.Now().Unix(),
+		})
+	}
 }
 
 func SetupRouter(cfg *config.Config, dbConn *gorm.DB) *gin.Engine {
@@ -54,7 +77,7 @@ func SetupRouter(cfg *config.Config, dbConn *gorm.DB) *gin.Engine {
 	r.Use(middleware.GlobalLimit)
 	r.Use(gzip.Gzip(gzip.DefaultCompression))
 
-	r.Match([]string{"GET", "HEAD"}, "/health", healthCheck)
+	r.Match([]string{"GET", "HEAD"}, "/health", healthCheck(dbConn))
 	r.GET("/ws", wsHandler)
 
 	projectRepo := repository.NewProjectRepo(dbConn)
