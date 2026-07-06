@@ -4,9 +4,11 @@ import (
 	"backend-portofolio/internal/core/domain"
 	"backend-portofolio/internal/core/ports"
 	"backend-portofolio/internal/dto"
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type ProfileHandler struct {
@@ -20,6 +22,10 @@ func NewProfileHandler(svc ports.ProfileService) *ProfileHandler {
 func (h *ProfileHandler) GetPublic(c *gin.Context) {
 	p, err := h.svc.GetPublicProfile(c.Request.Context())
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusOK, domain.Profile{})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}

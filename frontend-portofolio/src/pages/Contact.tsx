@@ -40,10 +40,10 @@ export default function Contact() {
                     transition={{ duration: 0.6 }}
                     className="text-center mb-12"
                 >
-                    <h2 className="heading-display text-4xl md:text-5xl font-bold mb-4 text-white inline-block border-b-2 border-primary-500 pb-2">
+                    <h2 className="heading-display text-4xl md:text-5xl font-bold mb-4 dark:text-white text-gray-900 inline-block border-b-2 border-primary-500 pb-2">
                         Get In Touch
                     </h2>
-                    <p className="text-gray-400 text-lg">
+                    <p className="dark:text-gray-400 text-gray-600 text-lg">
                         Have a question or want to work together? Let's connect.
                     </p>
                 </motion.div>
@@ -60,40 +60,40 @@ export default function Contact() {
                         <form onSubmit={handleSubmit} className="relative z-10 flex flex-col gap-6">
                             <div className="flex flex-col md:flex-row gap-6">
                                 <div className="flex-1 flex flex-col gap-2">
-                                    <label htmlFor="name" className="text-sm font-semibold text-gray-300">Name</label>
+                                    <label htmlFor="name" className="text-sm font-semibold dark:text-gray-300 text-gray-700">Name</label>
                                     <input
                                         type="text"
                                         id="name"
                                         required
                                         value={formData.name}
                                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                        className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all placeholder:text-gray-600"
+                                        className="w-full dark:bg-black/20 bg-white/50 dark:border-white/10 border-black/10 border rounded-xl px-4 py-3 dark:text-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all placeholder:text-gray-500"
                                         placeholder="John Doe"
                                     />
                                 </div>
                                 <div className="flex-1 flex flex-col gap-2">
-                                    <label htmlFor="email" className="text-sm font-semibold text-gray-300">Email</label>
+                                    <label htmlFor="email" className="text-sm font-semibold dark:text-gray-300 text-gray-700">Email</label>
                                     <input
                                         type="email"
                                         id="email"
                                         required
                                         value={formData.email}
                                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                        className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all placeholder:text-gray-600"
+                                        className="w-full dark:bg-black/20 bg-white/50 dark:border-white/10 border-black/10 border rounded-xl px-4 py-3 dark:text-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all placeholder:text-gray-500"
                                         placeholder="john@example.com"
                                     />
                                 </div>
                             </div>
                             
                             <div className="flex flex-col gap-2">
-                                <label htmlFor="message" className="text-sm font-semibold text-gray-300">Message</label>
+                                <label htmlFor="message" className="text-sm font-semibold dark:text-gray-300 text-gray-700">Message</label>
                                 <textarea
                                     id="message"
                                     required
                                     rows={5}
                                     value={formData.message}
                                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                                    className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all placeholder:text-gray-600 resize-none"
+                                    className="w-full dark:bg-black/20 bg-white/50 dark:border-white/10 border-black/10 border rounded-xl px-4 py-3 dark:text-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all placeholder:text-gray-500 resize-none"
                                     placeholder="Tell me about your project..."
                                 />
                             </div>

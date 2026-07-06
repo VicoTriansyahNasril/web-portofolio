@@ -51,7 +51,7 @@ export default function Projects() {
                 <h2 className="heading-display text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary-400 to-secondary-500 bg-clip-text text-transparent">
                     Projects
                 </h2>
-                <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+                <p className="dark:text-gray-400 text-gray-600 text-lg max-w-2xl mx-auto">
                     Berikut adalah koleksi proyek yang telah saya kerjakan.
                 </p>
             </motion.div>

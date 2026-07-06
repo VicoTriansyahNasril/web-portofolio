@@ -1,8 +1,9 @@
 import { Suspense, useEffect, useRef, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { useGLTF, Environment, Stars, OrbitControls } from '@react-three/drei'
+import { useGLTF, Environment, Stars, OrbitControls, Float, ContactShadows } from '@react-three/drei'
 import { Box, useTheme } from '@mui/material'
 import { useInView } from 'framer-motion'
+import * as THREE from 'three'
 import type { GLTF } from 'three-stdlib'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 
@@ -17,6 +18,17 @@ interface ModelProps {
 
 const Model = (props: ModelProps) => {
     const { scene } = useGLTF('/models/vico_setup_it.glb') as GLTF
+    
+    // Enable shadows on all meshes within the model
+    useEffect(() => {
+        scene.traverse((child) => {
+            if (child instanceof THREE.Mesh) {
+                child.castShadow = true
+                child.receiveShadow = true
+            }
+        })
+    }, [scene])
+    
     return <primitive object={scene} {...props} />
 }
 
@@ -52,11 +64,12 @@ const Controls = ({ rootRef }: { rootRef: React.RefObject<HTMLDivElement | null>
             ref={controlsRef}
             makeDefault
             autoRotate
-            autoRotateSpeed={0.5}
+            autoRotateSpeed={0.3}
             enableZoom={false}
             enablePan={true}
-            minPolarAngle={Math.PI / 3}
+            minPolarAngle={Math.PI / 3.5}
             maxPolarAngle={Math.PI / 1.8}
+            dampingFactor={0.05}
         />
     )
 }
@@ -66,16 +79,33 @@ const Scene = ({ rootRef }: { rootRef: React.RefObject<HTMLDivElement | null> })
 
     return (
         <>
-            <Stars radius={80} depth={50} count={5000} factor={5} saturation={0} fade speed={1.5} />
+            <Stars radius={100} depth={50} count={6000} factor={6} saturation={0.5} fade speed={1} />
             <Environment preset="city" />
-            <ambientLight intensity={0.5} />
-            <pointLight position={[10, 10, 15]} intensity={1.8} color={theme.palette.primary.main} />
-            <pointLight position={[-15, -8, 5]} intensity={1.2} color={theme.palette.secondary.main} />
-            <directionalLight position={[0, -10, 0]} intensity={0.5} />
+            <ambientLight intensity={0.6} />
+            
+            {/* Main Key Light */}
+            <pointLight position={[10, 15, 15]} intensity={2.5} color={theme.palette.primary.main} castShadow />
+            {/* Fill Light */}
+            <pointLight position={[-15, -5, 5]} intensity={1.5} color={theme.palette.secondary.main} />
+            {/* Rim Light */}
+            <directionalLight position={[0, 10, -10]} intensity={1.5} color="#ffffff" />
+            
             <Suspense fallback={null}>
-                <group rotation-y={-1.5}>
-                    <Model scale={1.7} position={[0, -2, 0]} />
-                </group>
+                <Float speed={1.5} rotationIntensity={0.2} floatIntensity={0.5} floatingRange={[-0.1, 0.1]}>
+                    <group rotation-y={-1.5}>
+                        <Model scale={1.7} position={[0, -2, 0]} />
+                    </group>
+                </Float>
+                
+                {/* Beautiful soft grounded shadow */}
+                <ContactShadows 
+                    position={[0, -2.8, 0]} 
+                    opacity={0.7} 
+                    scale={15} 
+                    blur={2} 
+                    far={4.5}
+                    color="#000000" 
+                />
             </Suspense>
             <Controls rootRef={rootRef} />
         </>
@@ -99,9 +129,15 @@ export default function Interactive3D({ rootRef }: Interactive3DProps) {
             }}
         >
             <Canvas
+                shadows
                 frameloop={isInView ? "always" : "never"}
-                camera={{ position: [0, 2, 30], fov: 45 }}
-                gl={{ antialias: false, powerPreference: 'high-performance' }}
+                camera={{ position: [0, 2, 32], fov: 45 }}
+                gl={{ 
+                    antialias: true, 
+                    powerPreference: 'high-performance',
+                    toneMapping: THREE.ACESFilmicToneMapping,
+                    toneMappingExposure: 1.1
+                }}
                 dpr={[1, 1.5]}
                 eventSource={rootRef as React.RefObject<HTMLElement>}
                 eventPrefix="client"

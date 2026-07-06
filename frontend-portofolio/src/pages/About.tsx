@@ -56,10 +56,10 @@ export default function About() {
             <motion.div initial="hidden" animate="visible" variants={sectionVariants} transition={{ delay: 0.2 }}>
                 <div className="glass-heavy p-6 md:p-10 mt-8 rounded-3xl border border-white/5 relative overflow-hidden group">
                     <div className="absolute inset-0 bg-gradient-to-br from-primary-500/5 to-secondary-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                    <h2 className="heading-display text-3xl font-bold mb-6 text-white inline-block border-b-2 border-primary-500 pb-2 relative z-10">
+                    <h2 className="heading-display text-3xl font-bold mb-6 dark:text-white text-gray-900 inline-block border-b-2 border-primary-500 pb-2 relative z-10">
                         About Me
                     </h2>
-                    <p className="text-gray-300 text-lg leading-relaxed whitespace-pre-wrap relative z-10">
+                    <p className="dark:text-gray-300 text-gray-700 text-lg leading-relaxed whitespace-pre-wrap relative z-10">
                         {profile?.bio}
                     </p>
                 </div>
@@ -69,7 +69,7 @@ export default function About() {
                 <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }}>
                     <div className="mt-16">
                         <motion.div variants={sectionVariants}>
-                            <h2 className="heading-display text-3xl font-bold mb-8 text-white inline-block border-b-2 border-primary-500 pb-2">
+                            <h2 className="heading-display text-3xl font-bold mb-8 dark:text-white text-gray-900 inline-block border-b-2 border-primary-500 pb-2">
                                 Experience
                             </h2>
                         </motion.div>
@@ -82,7 +82,7 @@ export default function About() {
                 <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }}>
                     <div className="mt-16">
                         <motion.div variants={sectionVariants}>
-                            <h2 className="heading-display text-3xl font-bold mb-6 text-white inline-block border-b-2 border-primary-500 pb-2">
+                            <h2 className="heading-display text-3xl font-bold mb-6 dark:text-white text-gray-900 inline-block border-b-2 border-primary-500 pb-2">
                                 Skills
                             </h2>
                         </motion.div>
@@ -95,7 +95,7 @@ export default function About() {
                 <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }}>
                     <div className="mt-16">
                         <motion.div variants={sectionVariants}>
-                            <h2 className="heading-display text-3xl font-bold mb-6 text-white inline-block border-b-2 border-primary-500 pb-2">
+                            <h2 className="heading-display text-3xl font-bold mb-6 dark:text-white text-gray-900 inline-block border-b-2 border-primary-500 pb-2">
                                 Achievements
                             </h2>
                         </motion.div>

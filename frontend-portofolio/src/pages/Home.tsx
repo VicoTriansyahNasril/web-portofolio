@@ -112,6 +112,7 @@ export default function Home() {
                     bgcolor: 'transparent',
                     userSelect: 'none',
                     cursor: 'grab',
+                    touchAction: 'pan-y !important',
                     '&:active': {
                         cursor: 'grabbing'
                     }
@@ -145,11 +146,11 @@ export default function Home() {
                                     </motion.div>
 
                                     <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.6 }}>
-                                        <h2 className="heading-display text-2xl md:text-4xl font-bold text-gray-300 mb-6">{profile?.headline}</h2>
+                                        <h2 className="heading-display text-2xl md:text-4xl font-bold dark:text-gray-300 text-gray-700 mb-6">{profile?.headline}</h2>
                                     </motion.div>
 
                                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.8 }}>
-                                        <p className="text-gray-400 text-lg md:text-xl max-w-xl leading-relaxed mb-8 text-balance">
+                                        <p className="dark:text-gray-400 text-gray-600 text-lg md:text-xl max-w-xl leading-relaxed mb-8 text-balance">
                                             {profile?.bio?.split('\n')[0]}
                                         </p>
                                     </motion.div>
@@ -157,12 +158,12 @@ export default function Home() {
                                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 1 }}>
                                         <div className="flex flex-row gap-4 justify-center md:justify-start">
                                             {socialLinks.github && (
-                                                <motion.a whileHover={{ scale: 1.1, rotate: 5 }} whileTap={{ scale: 0.95 }} href={socialLinks.github.url} target="_blank" className="p-3 glass rounded-full text-white hover:text-primary-400 transition-colors">
+                                                <motion.a whileHover={{ scale: 1.1, rotate: 5 }} whileTap={{ scale: 0.95 }} href={socialLinks.github.url} target="_blank" className="p-3 glass rounded-full dark:text-white text-gray-800 hover:text-primary-400 dark:hover:text-primary-400 transition-colors">
                                                     <GitHubIcon />
                                                 </motion.a>
                                             )}
                                             {socialLinks.linkedin && (
-                                                <motion.a whileHover={{ scale: 1.1, rotate: -5 }} whileTap={{ scale: 0.95 }} href={socialLinks.linkedin.url} target="_blank" className="p-3 glass rounded-full text-white hover:text-secondary-400 transition-colors">
+                                                <motion.a whileHover={{ scale: 1.1, rotate: -5 }} whileTap={{ scale: 0.95 }} href={socialLinks.linkedin.url} target="_blank" className="p-3 glass rounded-full dark:text-white text-gray-800 hover:text-secondary-400 dark:hover:text-secondary-400 transition-colors">
                                                     <LinkedInIcon />
                                                 </motion.a>
                                             )}
@@ -178,7 +179,7 @@ export default function Home() {
                                 <motion.div variants={itemVariants} initial="hidden" animate="visible" className="w-full" whileHover={{ scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }}>
                                     <div className="glass-heavy p-6 md:p-8 rounded-3xl border border-white/5 relative overflow-hidden group">
                                         <div className="absolute inset-0 bg-gradient-to-br from-primary-500/10 to-secondary-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                                        <h3 className="heading-display text-2xl font-bold mb-4 text-white">Tech Stack</h3>
+                                        <h3 className="heading-display text-2xl font-bold mb-4 dark:text-white text-gray-900">Tech Stack</h3>
                                         <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="flex flex-wrap gap-2 relative z-10">
                                             {safeSkills.slice(0, 8).map((skill, index) => (
                                                 <motion.div key={skill.id} variants={chipVariants} custom={index} whileHover={{ scale: 1.1, y: -2 }} whileTap={{ scale: 0.95 }}>
@@ -196,8 +197,8 @@ export default function Home() {
                                 <motion.div variants={itemVariants} initial="hidden" animate="visible" transition={{ delay: 0.2 }} className="w-full" whileHover={{ scale: 1.02, y: -5 }}>
                                     <div className="glass-heavy p-6 md:p-8 rounded-3xl border border-white/5 text-center relative overflow-hidden group">
                                         <div className="absolute inset-0 bg-gradient-to-tr from-secondary-500/10 to-primary-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                                        <h3 className="heading-display text-2xl font-bold text-white mb-2 relative z-10">Explore My Work</h3>
-                                        <p className="text-gray-400 mb-6 relative z-10">Check out my latest projects and experiments.</p>
+                                        <h3 className="heading-display text-2xl font-bold dark:text-white text-gray-900 mb-2 relative z-10">Explore My Work</h3>
+                                        <p className="dark:text-gray-400 text-gray-600 mb-6 relative z-10">Check out my latest projects and experiments.</p>
                                         <motion.button onClick={handleScrollToProjects} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="px-8 py-3 bg-white text-black font-semibold rounded-full hover:bg-gray-200 transition-colors relative z-10 flex items-center justify-center mx-auto gap-2">
                                             View Projects <ArrowForwardIcon fontSize="small" />
                                         </motion.button>

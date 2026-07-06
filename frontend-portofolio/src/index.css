@@ -61,8 +61,6 @@ body {
     margin: 0;
     min-height: 100vh;
     position: relative;
-    background-color: #050505;
-    color: #e5e7eb;
 }
 
 /* Glassmorphism utilities */
@@ -70,8 +68,14 @@ body {
     .glass {
         @apply bg-white/5 backdrop-blur-md border border-white/10;
     }
+    [data-color-mode="light"] .glass {
+        @apply bg-black/5 backdrop-blur-md border border-black/10;
+    }
     .glass-heavy {
         @apply bg-black/40 backdrop-blur-xl border border-white/10 shadow-[0_4px_30px_rgba(0,0,0,0.5)];
+    }
+    [data-color-mode="light"] .glass-heavy {
+        @apply bg-white/60 backdrop-blur-xl border border-black/10 shadow-[0_4px_30px_rgba(0,0,0,0.1)];
     }
     .text-balance {
         text-wrap: balance;
