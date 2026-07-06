@@ -1,10 +1,12 @@
 package repository
 
 import (
-	"context"
 	"backend-portofolio/internal/core/domain"
 	"backend-portofolio/internal/core/ports"
+	"backend-portofolio/internal/dto"
+	"context"
 	"database/sql"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -70,4 +72,16 @@ func (r *projectRepo) GetMaxSortOrder(ctx context.Context) (int, error) {
 		return int(max.Int64), nil
 	}
 	return 0, nil
+}
+
+func (r *projectRepo) Reorder(ctx context.Context, orders []dto.ReorderItem) error {
+	tx := r.db.WithContext(ctx).Begin()
+	for _, o := range orders {
+		if err := tx.Model(&domain.Project{}).Where("id = ?", o.ID).
+			Updates(map[string]interface{}{"sort_order": o.SortOrder, "updated_at": time.Now()}).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+	return tx.Commit().Error
 }

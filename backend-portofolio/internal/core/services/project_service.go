@@ -1,12 +1,12 @@
 package services
 
 import (
-	"context"
 	"backend-portofolio/internal/cache"
 	"backend-portofolio/internal/core/domain"
 	"backend-portofolio/internal/core/ports"
 	"backend-portofolio/internal/dto"
 	"backend-portofolio/internal/websocket"
+	"context"
 	"encoding/json"
 	"log"
 	"regexp"
@@ -200,16 +200,9 @@ func (s *projectService) DeleteProject(ctx context.Context, id uint) error {
 }
 
 func (s *projectService) ReorderProjects(ctx context.Context, req dto.ReorderReq) error {
-	now := time.Now()
-	for _, o := range req.Orders {
-		p, err := s.repo.FindByID(ctx, o.ID)
-		if err == nil {
-			p.SortOrder = &o.SortOrder
-			p.UpdatedAt = now
-			if err := s.repo.Update(ctx, p); err != nil {
-				log.Printf("Failed to reorder project ID %d: %v", o.ID, err)
-			}
-		}
+	if err := s.repo.Reorder(ctx, req.Orders); err != nil {
+		log.Printf("Failed to reorder projects: %v", err)
+		return err
 	}
 	s.invalidateCache("")
 	return nil

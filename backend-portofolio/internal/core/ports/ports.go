@@ -1,9 +1,9 @@
 package ports
 
 import (
-	"context"
 	"backend-portofolio/internal/core/domain"
 	"backend-portofolio/internal/dto"
+	"context"
 )
 
 // --- Repositories ---
@@ -17,6 +17,7 @@ type ProjectRepository interface {
 	FindAllPublic(ctx context.Context) ([]domain.Project, error)
 	FindAllAdmin(ctx context.Context) ([]domain.Project, error)
 	GetMaxSortOrder(ctx context.Context) (int, error)
+	Reorder(ctx context.Context, orders []dto.ReorderItem) error
 }
 
 type ProfileRepository interface {
