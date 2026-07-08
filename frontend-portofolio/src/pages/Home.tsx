@@ -8,6 +8,7 @@ import LinkedInIcon from "@mui/icons-material/LinkedIn";
 import { usePublicData } from "@/hooks/usePublicData";
 import type { Profile } from "@/features/profile/types";
 import type { Skill } from "@/features/skills/types";
+import type { Testimonial } from "@/features/testimonials/types";
 import LazySection from "@/components/utils/LazySection";
 import Interactive3D from "@/components/ui/Interactive3D";
 import SectionBackground from "@/components/ui/SectionBackground";
@@ -16,6 +17,9 @@ import { useScrollSectionTracker } from "@/hooks/useScrollSectionTracker";
 
 const ProjectsSection = lazy(() => import("./Projects"));
 const AboutSection = lazy(() => import("./About"));
+const TestimonialSection = lazy(
+  () => import("@/features/testimonials/components/TestimonialSection"),
+);
 const ContactSection = lazy(() => import("./Contact"));
 
 const itemVariants: Variants = {
@@ -47,8 +51,10 @@ export default function Home() {
     usePublicData<Profile>("/api/profile");
   const { data: skills, isLoading: skillsLoading } =
     usePublicData<Skill[]>("/api/skills");
+  const { data: testimonialsRes, isLoading: testimonialsLoading } =
+    usePublicData<{ data: Testimonial[] }>("/api/testimonials");
 
-  const loading = profileLoading || skillsLoading;
+  const loading = profileLoading || skillsLoading || testimonialsLoading;
   useScrollSectionTracker();
   useEffect(() => {
     const state = location.state as { scrollTo?: string } | null;
@@ -82,6 +88,9 @@ export default function Home() {
   }, [profile]);
 
   const safeSkills = Array.isArray(skills) ? skills : [];
+  const safeTestimonials = Array.isArray(testimonialsRes?.data)
+    ? testimonialsRes.data
+    : [];
 
   const handleScrollToProjects = () => {
     const element = document.getElementById("projects");
@@ -337,6 +346,27 @@ export default function Home() {
           </LazySection>
         </Container>
       </Box>
+
+      {safeTestimonials.length > 0 && (
+        <Box
+          component="section"
+          id="testimonials"
+          sx={{
+            py: 10,
+            bgcolor: "transparent",
+            position: "relative",
+          }}
+        >
+          <SectionBackground />
+          <Container sx={{ position: "relative", zIndex: 1 }}>
+            <LazySection>
+              <Suspense fallback={null}>
+                <TestimonialSection testimonials={safeTestimonials} />
+              </Suspense>
+            </LazySection>
+          </Container>
+        </Box>
+      )}
 
       <Box
         component="section"

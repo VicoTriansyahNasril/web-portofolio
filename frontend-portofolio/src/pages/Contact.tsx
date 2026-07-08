@@ -86,7 +86,7 @@ export default function Contact() {
                       setFormData({ ...formData, name: e.target.value })
                     }
                     className="w-full dark:bg-black/20 bg-white/50 dark:border-white/10 border-black/10 border rounded-xl px-4 py-3 dark:text-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all placeholder:text-gray-500"
-                    placeholder="John Doe"
+                    placeholder="Your name"
                   />
                 </div>
                 <div className="flex-1 flex flex-col gap-2">
@@ -105,7 +105,7 @@ export default function Contact() {
                       setFormData({ ...formData, email: e.target.value })
                     }
                     className="w-full dark:bg-black/20 bg-white/50 dark:border-white/10 border-black/10 border rounded-xl px-4 py-3 dark:text-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all placeholder:text-gray-500"
-                    placeholder="john@example.com"
+                    placeholder="yourname@example.com"
                   />
                 </div>
               </div>

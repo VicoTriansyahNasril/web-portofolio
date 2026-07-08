@@ -104,6 +104,10 @@ func SetupRouter(cfg *config.Config, dbConn *gorm.DB) *gin.Engine {
 	analyticsSvc := services.NewAnalyticsService(analyticsRepo)
 	analyticsHdl := handler.NewAnalyticsHandler(analyticsSvc)
 
+	testimonialRepo := repository.NewTestimonialRepo(dbConn)
+	testimonialSvc := services.NewTestimonialService(testimonialRepo)
+	testimonialHdl := handler.NewTestimonialHandler(testimonialSvc)
+
 	authSvc := services.NewAuthService(cfg.JWTSecret, cfg.AdminEmail, cfg.AdminPassword)
 	authHdl := handler.NewAuthHandler(authSvc)
 
@@ -122,6 +126,7 @@ func SetupRouter(cfg *config.Config, dbConn *gorm.DB) *gin.Engine {
 		publicAPI.GET("/skills", skillHdl.ListPublic)
 		publicAPI.GET("/experiences", experienceHdl.ListPublic)
 		publicAPI.GET("/achievements", achievementHdl.ListPublic)
+		publicAPI.GET("/testimonials", testimonialHdl.ListPublic)
 		publicAPI.GET("/analytics/stats", analyticsHdl.GetPublicStats)
 	}
 
@@ -157,6 +162,12 @@ func SetupRouter(cfg *config.Config, dbConn *gorm.DB) *gin.Engine {
 		admin.PUT("/achievements/:id", achievementHdl.Update)
 		admin.DELETE("/achievements/:id", achievementHdl.Delete)
 		admin.POST("/achievements/reorder", achievementHdl.Reorder)
+
+		admin.GET("/testimonials", testimonialHdl.ListAdmin)
+		admin.POST("/testimonials", testimonialHdl.Create)
+		admin.PUT("/testimonials/:id", testimonialHdl.Update)
+		admin.DELETE("/testimonials/:id", testimonialHdl.Delete)
+		admin.POST("/testimonials/reorder", testimonialHdl.Reorder)
 
 		admin.GET("/analytics/visitors", analyticsHdl.GetVisitorsSummary)
 		admin.GET("/analytics/visitors/:visitorHash", analyticsHdl.GetVisitorDetail)

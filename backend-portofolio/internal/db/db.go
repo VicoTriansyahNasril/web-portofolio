@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	Conn    *gorm.DB 
+	Conn    *gorm.DB
 	isReady bool
 	mu      sync.RWMutex
 )
@@ -50,7 +50,7 @@ func Init(cfg config.Config) *gorm.DB {
 				err = db.AutoMigrate(
 					&domain.Project{}, &domain.Profile{}, &domain.SocialLink{},
 					&domain.Skill{}, &domain.Experience{}, &domain.Achievement{},
-					&domain.PageVisit{},
+					&domain.PageVisit{}, &domain.Testimonial{},
 				)
 				if err != nil {
 					log.Printf("⚠️ Migration warning: %v", err)

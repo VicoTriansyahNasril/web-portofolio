@@ -65,6 +65,17 @@ type AnalyticsRepository interface {
 	GetVisitsByHash(ctx context.Context, hash string) ([]domain.PageVisit, error)
 }
 
+type TestimonialRepository interface {
+	ListPublic(ctx context.Context) ([]domain.Testimonial, error)
+	ListAdmin(ctx context.Context) ([]domain.Testimonial, error)
+	FindByID(ctx context.Context, id uint) (*domain.Testimonial, error)
+	Create(ctx context.Context, testimonial *domain.Testimonial) error
+	Update(ctx context.Context, testimonial *domain.Testimonial) error
+	Delete(ctx context.Context, id uint) error
+	Reorder(ctx context.Context, orders []dto.ReorderItem) error
+	GetMaxSortOrder(ctx context.Context) (int, error)
+}
+
 // --- Services ---
 
 type ProjectService interface {
@@ -132,4 +143,13 @@ type UploadService interface {
 
 type ContactService interface {
 	SendMessage(ctx context.Context, name, email, message string) error
+}
+
+type TestimonialService interface {
+	GetPublicTestimonials(ctx context.Context) ([]domain.Testimonial, error)
+	GetAdminTestimonials(ctx context.Context) ([]domain.Testimonial, error)
+	CreateTestimonial(ctx context.Context, req dto.TestimonialReq) error
+	UpdateTestimonial(ctx context.Context, id uint, req dto.TestimonialReq) error
+	DeleteTestimonial(ctx context.Context, id uint) error
+	ReorderTestimonials(ctx context.Context, req dto.ReorderReq) error
 }

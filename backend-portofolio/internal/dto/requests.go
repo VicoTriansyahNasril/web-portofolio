@@ -110,3 +110,15 @@ type ContactReq struct {
 	Email   string `json:"email" binding:"required,email"`
 	Message string `json:"message" binding:"required"`
 }
+
+// --- Testimonials ---
+type TestimonialReq struct {
+	Name      string `json:"name" binding:"required"`
+	Role      string `json:"role"`
+	Company   string `json:"company"`
+	AvatarURL string `json:"avatar_url"`
+	Content   string `json:"content" binding:"required"`
+	Rating    *int   `json:"rating"`
+	IsVisible *bool  `json:"is_visible"`
+	SortOrder *int   `json:"sort_order"`
+}
